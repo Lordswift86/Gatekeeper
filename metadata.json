@@ -1,0 +1,7 @@
+{
+  "name": "GateKeeper SaaS",
+  "description": "Multi-tenant security management platform for residential estates handling entry/exit lifecycles.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
