@@ -16,6 +16,7 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
   const [passes, setPasses] = useState<GuestPass[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
   const [isAccessRestricted, setIsAccessRestricted] = useState(false);
+  const [estateName, setEstateName] = useState('');
 
   // Form State
   const [isCreating, setIsCreating] = useState(false);
@@ -52,6 +53,8 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
   const loadData = () => {
     setPasses(MockService.getUserPasses(user.id));
     setBills(MockService.getUserBills(user.id));
+    const est = MockService.getEstate(user.estateId);
+    setEstateName(est?.name || 'GateKeeper Estate');
   };
 
   const toggleDay = (day: string) => {
@@ -88,6 +91,40 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
     if (window.confirm(`Are you sure you want to cancel the pass for ${pass.guestName}? The code will immediately become invalid.`)) {
       MockService.cancelPass(pass.id);
       loadData();
+    }
+  };
+
+  const handleSharePass = async (pass: GuestPass) => {
+    const validTime = new Date(pass.validUntil).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    
+    let text = `GateKeeper Access Pass\n\n`;
+    text += `Visitor: ${pass.guestName}\n`;
+    text += `Code: ${pass.code}\n`;
+    text += `Location: ${estateName}, Unit ${user.unitNumber}\n`;
+    text += `Valid until: ${validTime}\n`;
+    
+    if (pass.exitInstruction) {
+        text += `Note: ${pass.exitInstruction}\n`;
+    }
+    
+    text += `\nPlease show this code to security at the gate.`;
+
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Entry Pass',
+                text: text
+            });
+        } catch (err) {
+            // Share cancelled
+        }
+    } else {
+        try {
+            await navigator.clipboard.writeText(text);
+            alert('Access pass copied to clipboard!');
+        } catch (err) {
+            alert(`Your code is ${pass.code}`);
+        }
     }
   };
 
@@ -589,7 +626,7 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
                       </span>
                   </div>
                   <div className="mt-4 flex gap-2">
-                      <Button size="sm" variant="secondary" className="bg-white dark:bg-slate-800 text-xs h-8" onClick={() => alert(`Shared code ${pass.code} for ${pass.guestName}`)}>Share</Button>
+                      <Button size="sm" variant="secondary" className="bg-white dark:bg-slate-800 text-xs h-8" onClick={() => handleSharePass(pass)}>Share</Button>
                       <Button size="sm" variant="danger" className="text-xs h-8" onClick={() => handleCancelPass(pass)}>Revoke</Button>
                   </div>
                   </CardBody>
@@ -620,7 +657,7 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Valid until {new Date(pass.validUntil).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                   
                   <div className="flex gap-2 w-full">
-                      <Button variant="secondary" fullWidth className="gap-2 text-xs" onClick={() => alert(`Shared code ${pass.code} for ${pass.guestName}`)}>
+                      <Button variant="secondary" fullWidth className="gap-2 text-xs" onClick={() => handleSharePass(pass)}>
                       <Share2 size={14} /> Share
                       </Button>
                       <Button variant="danger" className="px-3" onClick={() => handleCancelPass(pass)}>
