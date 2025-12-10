@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, GuestPass, PassStatus, PassType, Bill, BillStatus } from '../types';
 import { MockService } from '../services/mockData';
 import { Card, CardHeader, CardBody } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Plus, Clock, Share2, Trash2, UserCheck, Truck, AlertOctagon, CheckCircle, Wallet, AlertCircle, CreditCard, Lock, X, History, Bell, Shield, Key } from 'lucide-react';
+import { Plus, Clock, Share2, Trash2, UserCheck, Truck, AlertOctagon, CheckCircle, Wallet, AlertCircle, CreditCard, Lock, X, History, Bell, Shield, Key, Gamepad2, Ghost, Heart, Star, Zap, Cloud, Moon, Sun, Anchor, Coffee, Music, Smile, Trophy, RefreshCw, ArrowRight, Crown, Flag, Flame, Plane, Rocket, Scissors, Umbrella, Gift, Globe, Camera } from 'lucide-react';
 import { AdBanner } from '../components/AdBanner';
 
 interface Props {
@@ -11,6 +12,21 @@ interface Props {
   showAds: boolean;
   currentView: string;
 }
+
+// Game Types
+interface GameCard {
+  id: number;
+  iconId: number;
+  isFlipped: boolean;
+  isMatched: boolean;
+}
+
+const GAME_ICONS = [
+  Ghost, Heart, Star, Zap, Cloud, Moon, 
+  Sun, Anchor, Coffee, Music, Smile, Trophy,
+  Flag, Flame, Plane, Rocket, Scissors, Umbrella, 
+  Gift, Globe, Camera, Key, Lock, Bell
+];
 
 export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView }) => {
   const [passes, setPasses] = useState<GuestPass[]>([]);
@@ -36,11 +52,20 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
-  const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvv: '', name: '' });
+  const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvv: '', name: user.name });
   
   // Settings State
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [privacyEnabled, setPrivacyEnabled] = useState(true);
+
+  // Game State
+  const [gameCards, setGameCards] = useState<GameCard[]>([]);
+  const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
+  const [moves, setMoves] = useState(0);
+  const [allowedMoves, setAllowedMoves] = useState(0);
+  const [isGameWon, setIsGameWon] = useState(false);
+  const [stage, setStage] = useState(1);
+  const MAX_STAGE = 20;
 
   const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -49,6 +74,112 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
     const restricted = MockService.checkAccessRestricted(user.id);
     setIsAccessRestricted(restricted);
   }, [user.id, currentView]);
+
+  useEffect(() => {
+    if (currentView === 'game') {
+      initializeGame(stage);
+    }
+  }, [currentView]);
+
+  // Game Logic
+  const initializeGame = (currentStage: number) => {
+    // Formula: starting 2x2 (4 tiles) and increase by 2 tiles per stage
+    const tileCount = 4 + (currentStage - 1) * 2;
+    const pairCount = tileCount / 2;
+    
+    // Formula: x = (number of tiles * 2) - (number of tiles / 2)
+    const maxMovesAllowed = Math.floor((tileCount * 2) - (tileCount / 2));
+    setAllowedMoves(maxMovesAllowed);
+
+    // Select icons
+    const selectedIcons = GAME_ICONS.slice(0, pairCount);
+    // Ensure we have enough icons, if pairCount exceeds GAME_ICONS length, reuse (though we added enough)
+    const iconsToUse = selectedIcons.length < pairCount 
+        ? [...selectedIcons, ...GAME_ICONS.slice(0, pairCount - selectedIcons.length)]
+        : selectedIcons;
+
+    const pairs = [...iconsToUse, ...iconsToUse];
+    
+    // Shuffle
+    const shuffled = pairs
+      .map((icon) => ({ icon, sort: Math.random() }))
+      .sort((a, b) => a.sort - b.sort)
+      .map((item, index) => ({
+        id: index,
+        iconId: GAME_ICONS.indexOf(item.icon),
+        isFlipped: false,
+        isMatched: false
+      }));
+
+    setGameCards(shuffled);
+    setFlippedIndices([]);
+    setMoves(0);
+    setIsGameWon(false);
+  };
+
+  const handleNextStage = () => {
+    if (stage < MAX_STAGE) {
+      const nextStage = stage + 1;
+      setStage(nextStage);
+      initializeGame(nextStage);
+    }
+  };
+
+  const handleRestartGame = () => {
+    // Retry current level
+    initializeGame(stage);
+  };
+
+  const handleResetToLevel1 = () => {
+      setStage(1);
+      initializeGame(1);
+  };
+
+  const handleCardClick = (index: number) => {
+    if (flippedIndices.length === 2 || gameCards[index].isFlipped || gameCards[index].isMatched) return;
+
+    // Increment move count on every valid click
+    setMoves(m => m + 1);
+
+    const newCards = [...gameCards];
+    newCards[index].isFlipped = true;
+    setGameCards(newCards);
+
+    const newFlipped = [...flippedIndices, index];
+    setFlippedIndices(newFlipped);
+
+    if (newFlipped.length === 2) {
+      checkForMatch(newFlipped, newCards);
+    }
+  };
+
+  const checkForMatch = (indices: number[], currentCards: GameCard[]) => {
+    const [first, second] = indices;
+    if (currentCards[first].iconId === currentCards[second].iconId) {
+      // Match found
+      setTimeout(() => {
+        const matchedCards = [...currentCards];
+        matchedCards[first].isMatched = true;
+        matchedCards[second].isMatched = true;
+        setGameCards(matchedCards);
+        setFlippedIndices([]);
+        
+        if (matchedCards.every(c => c.isMatched)) {
+          setIsGameWon(true);
+        }
+      }, 500);
+    } else {
+      // No match
+      setTimeout(() => {
+        const resetCards = [...currentCards];
+        resetCards[first].isFlipped = false;
+        resetCards[second].isFlipped = false;
+        setGameCards(resetCards);
+        setFlippedIndices([]);
+      }, 1000);
+    }
+  };
+
 
   const loadData = () => {
     setPasses(MockService.getUserPasses(user.id));
@@ -164,6 +295,123 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
     setCreateType(type);
     setIsCreating(true);
   };
+
+  // --- VIEW: GAME ---
+  if (currentView === 'game') {
+    // Dynamic grid columns based on number of tiles
+    const tileCount = gameCards.length;
+    const cols = Math.ceil(Math.sqrt(tileCount));
+    const isLevelFailed = isGameWon && moves > allowedMoves;
+
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Gamepad2 className="text-indigo-600 dark:text-indigo-400" /> Relax Zone
+          </h2>
+          <div className="flex items-center gap-2">
+             <div className="bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2">
+               <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Stage</span>
+               <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{stage} / {MAX_STAGE}</span>
+             </div>
+             <Button onClick={handleResetToLevel1} variant="secondary" className="gap-2 text-xs">
+                <RefreshCw size={14} /> Reset
+             </Button>
+          </div>
+        </div>
+
+        <div className="text-center mb-4">
+          <span className={`inline-block px-4 py-2 rounded-full font-bold text-sm border ${moves > allowedMoves ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800' : 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800'}`}>
+            Moves: {moves} / {allowedMoves}
+          </span>
+        </div>
+
+        <div className="max-w-2xl mx-auto relative">
+          {/* Win Overlay */}
+          {isGameWon && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm rounded-xl animate-fade-in border-2 border-indigo-100 dark:border-indigo-900 px-4 text-center">
+              {isLevelFailed ? (
+                 <>
+                    <X size={64} className="text-red-500 mb-4 animate-bounce" />
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Level Failed</h3>
+                    <p className="text-slate-600 dark:text-slate-300 mb-6 font-medium">
+                        You took {moves} moves. Maximum allowed is {allowedMoves}.
+                    </p>
+                    <Button onClick={handleRestartGame} size="lg" className="shadow-xl shadow-red-200 dark:shadow-none bg-red-600 hover:bg-red-700">
+                        Retry Level
+                    </Button>
+                 </>
+              ) : (
+                 <>
+                    {stage === MAX_STAGE ? (
+                        <Crown size={64} className="text-yellow-500 mb-4 animate-bounce" />
+                    ) : (
+                        <Trophy size={64} className="text-indigo-500 mb-4 animate-bounce" />
+                    )}
+                    
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                        {stage === MAX_STAGE ? 'Grand Champion!' : 'Stage Complete!'}
+                    </h3>
+                    
+                    <p className="text-slate-600 dark:text-slate-300 mb-6 font-medium">
+                        {stage === MAX_STAGE ? `You beat the game in ${moves} moves.` : `You cleared Stage ${stage} in ${moves} moves.`}
+                    </p>
+                    
+                    {stage < MAX_STAGE ? (
+                        <Button onClick={handleNextStage} size="lg" className="shadow-xl shadow-indigo-200 dark:shadow-none gap-2">
+                            Next Level <ArrowRight size={20} />
+                        </Button>
+                    ) : (
+                        <Button onClick={handleResetToLevel1} size="lg" className="shadow-xl shadow-indigo-200 dark:shadow-none">
+                            Play Again
+                        </Button>
+                    )}
+                 </>
+              )}
+            </div>
+          )}
+
+          <div 
+            className="grid gap-3 md:gap-4 transition-all duration-300"
+            style={{ 
+                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` 
+            }}
+          >
+            {gameCards.map((card, index) => {
+              const Icon = GAME_ICONS[card.iconId] || GAME_ICONS[0]; // Fallback if icon missing
+              return (
+                <div 
+                  key={index} 
+                  onClick={() => handleCardClick(index)}
+                  className={`aspect-square cursor-pointer transition-all duration-300 transform preserve-3d relative ${card.isFlipped || card.isMatched ? 'rotate-y-180' : ''}`}
+                >
+                  <div className={`w-full h-full rounded-xl flex items-center justify-center shadow-sm transition-all ${
+                    card.isFlipped || card.isMatched 
+                      ? 'bg-white dark:bg-slate-800 border-2 border-indigo-500 dark:border-indigo-400 rotate-y-180' 
+                      : 'bg-indigo-600 dark:bg-indigo-800 hover:bg-indigo-500'
+                  }`}>
+                    {(card.isFlipped || card.isMatched) ? (
+                      <Icon size={tileCount > 16 ? 16 : 24} className="text-indigo-600 dark:text-indigo-400 animate-fade-in" />
+                    ) : (
+                      <Gamepad2 size={tileCount > 16 ? 16 : 24} className="text-indigo-300/30" />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl text-center max-w-md mx-auto mt-8 border border-slate-200 dark:border-slate-700">
+          <h4 className="font-bold text-slate-900 dark:text-white mb-2">How to Play</h4>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Tap cards to find matching pairs. Complete the stage within the move limit to advance. 
+            There are {MAX_STAGE} stages in total!
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // --- VIEW: PAYMENTS ---
   if (currentView === 'payments') {
