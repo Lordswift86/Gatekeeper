@@ -3,9 +3,9 @@ import { User, UserRole, Estate, SubscriptionTier, GuestPass, PassStatus, PassTy
 // --- Seed Data ---
 
 let ESTATES: Estate[] = [
-  { id: 'est_1', name: 'Sunset Gardens', code: 'SUN01', subscriptionTier: SubscriptionTier.FREE },
-  { id: 'est_2', name: 'Royal Heights', code: 'ROY02', subscriptionTier: SubscriptionTier.PREMIUM },
-  { id: 'est_3', name: 'Palm Springs', code: 'PLM03', subscriptionTier: SubscriptionTier.FREE },
+  { id: 'est_1', name: 'Sunset Gardens', code: 'SUN01', subscriptionTier: SubscriptionTier.FREE, status: 'ACTIVE' },
+  { id: 'est_2', name: 'Royal Heights', code: 'ROY02', subscriptionTier: SubscriptionTier.PREMIUM, status: 'ACTIVE' },
+  { id: 'est_3', name: 'Palm Springs', code: 'PLM03', subscriptionTier: SubscriptionTier.FREE, status: 'SUSPENDED' },
 ];
 
 let USERS: User[] = [
@@ -343,6 +343,10 @@ export const MockService = {
   getUserBills: (userId: string): Bill[] => {
     return BILLS.filter(b => b.userId === userId);
   },
+  
+  getEstateBills: (estateId: string): Bill[] => {
+    return BILLS.filter(b => b.estateId === estateId).sort((a, b) => b.dueDate - a.dueDate);
+  },
 
   checkAccessRestricted: (userId: string): boolean => {
     const overdueLimit = Date.now() - (86400000 * 30); // 30 days ago
@@ -425,6 +429,10 @@ export const MockService = {
   approveUser: (userId: string) => {
     USERS = USERS.map(u => u.id === userId ? { ...u, isApproved: true } : u);
   },
+  
+  rejectUser: (userId: string) => {
+    USERS = USERS.filter(u => u.id !== userId);
+  },
 
   createAnnouncement: (estateId: string, title: string, content: string) => {
     const newAnnouncement: Announcement = {
@@ -442,6 +450,17 @@ export const MockService = {
     return ESTATES;
   },
 
+  createEstate: (name: string, code: string, tier: SubscriptionTier) => {
+    const newEstate: Estate = {
+        id: `est_${Date.now()}`,
+        name,
+        code: code.toUpperCase(),
+        subscriptionTier: tier,
+        status: 'ACTIVE'
+    };
+    ESTATES = [...ESTATES, newEstate];
+  },
+
   toggleEstateTier: (estateId: string) => {
     ESTATES = ESTATES.map(e => {
       if (e.id === estateId) {
@@ -451,6 +470,18 @@ export const MockService = {
         };
       }
       return e;
+    });
+  },
+
+  toggleEstateStatus: (estateId: string) => {
+    ESTATES = ESTATES.map(e => {
+        if (e.id === estateId) {
+            return {
+                ...e,
+                status: e.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'
+            };
+        }
+        return e;
     });
   },
 

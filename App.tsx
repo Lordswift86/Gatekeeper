@@ -63,13 +63,13 @@ function App() {
   const renderContent = () => {
     switch (user.role) {
       case UserRole.RESIDENT:
-        return <ResidentDashboard user={user} showAds={estate?.subscriptionTier === SubscriptionTier.FREE} />;
+        return <ResidentDashboard user={user} showAds={estate?.subscriptionTier === SubscriptionTier.FREE} currentView={currentView} />;
       case UserRole.SECURITY:
         return <SecurityDashboard user={user} currentView={currentView} />;
       case UserRole.ESTATE_ADMIN:
-        return <AdminDashboard user={user} />;
+        return <AdminDashboard user={user} currentView={currentView} />;
       case UserRole.SUPER_ADMIN:
-        return <SuperAdminDashboard user={user} />;
+        return <SuperAdminDashboard user={user} currentView={currentView} />;
       default:
         return <div>Role not supported</div>;
     }

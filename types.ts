@@ -46,6 +46,7 @@ export interface Estate {
   name: string;
   code: string; // Property Code for onboarding
   subscriptionTier: SubscriptionTier;
+  status: 'ACTIVE' | 'SUSPENDED';
 }
 
 export interface User {
