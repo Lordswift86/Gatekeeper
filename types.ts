@@ -118,7 +118,46 @@ export interface IntercomSession {
   estateId: string;
   residentId: string;
   residentName: string;
-  securityId: string;
+  securityId?: string; // Optional if resident initiates
+  initiator: 'SECURITY' | 'RESIDENT';
   status: CallStatus;
   timestamp: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  fromId: string;
+  toId: string; // 'SECURITY' or UserID
+  content: string;
+  timestamp: number;
+  read: boolean;
+}
+
+export interface EmergencyAlert {
+  id: string;
+  estateId: string;
+  residentId: string;
+  unitNumber: string;
+  status: 'ACTIVE' | 'RESOLVED';
+  timestamp: number;
+}
+
+// Super Admin Specific
+export interface GlobalAd {
+  id: string;
+  title: string;
+  content: string;
+  imageUrl?: string;
+  impressions: number;
+  isActive: boolean;
+  createdAt: number;
+}
+
+export interface SystemLog {
+  id: string;
+  action: string;
+  actor: string;
+  details: string;
+  timestamp: number;
+  severity: 'INFO' | 'WARN' | 'CRITICAL';
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, UserRole, Estate, SubscriptionTier, CallStatus } from '../types';
-import { LogOut, ShieldCheck, Home, User as UserIcon, Settings, Menu, Megaphone, Building2, Globe, Sun, Moon, Truck, CreditCard, PhoneCall, Phone, Mic, MicOff, Video, PhoneOff, Gamepad2 } from 'lucide-react';
+import { LogOut, ShieldCheck, Home, User as UserIcon, Settings, Menu, Megaphone, Building2, Globe, Sun, Moon, Truck, CreditCard, PhoneCall, Phone, Mic, MicOff, Video, PhoneOff, Gamepad2, Activity, Search } from 'lucide-react';
 import { AdBanner } from './AdBanner';
 import { MockService } from '../services/mockData';
 
@@ -151,6 +151,9 @@ export const Layout: React.FC<LayoutProps> = ({ user, estate, children, onLogout
               <>
                  <NavItem view="overview" icon={Globe} label="Platform" />
                  <NavItem view="tenants" icon={Building2} label="Tenants" />
+                 <NavItem view="users" icon={UserIcon} label="Users" />
+                 <NavItem view="ads" icon={Megaphone} label="Ad Manager" />
+                 <NavItem view="logs" icon={Activity} label="Audit Logs" />
               </>
             )}
           </nav>

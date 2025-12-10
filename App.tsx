@@ -3,10 +3,10 @@ import { User, UserRole, Estate, SubscriptionTier } from './types';
 import { MockService } from './services/mockData';
 import { Layout } from './components/Layout';
 import { Auth } from './pages/Auth';
-import { ResidentDashboard } from './pages/ResidentDashboard';
-import { SecurityDashboard } from './pages/SecurityDashboard';
-import { AdminDashboard } from './pages/AdminDashboard';
-import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
+import { ResidentDashboard } from './modules/resident/ResidentDashboard';
+import { SecurityDashboard } from './modules/security/SecurityDashboard';
+import { EstateAdminDashboard } from './modules/estate-admin/EstateAdminDashboard';
+import { SuperAdminDashboard } from './modules/super-admin/SuperAdminDashboard';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -67,7 +67,7 @@ function App() {
       case UserRole.SECURITY:
         return <SecurityDashboard user={user} currentView={currentView} />;
       case UserRole.ESTATE_ADMIN:
-        return <AdminDashboard user={user} currentView={currentView} />;
+        return <EstateAdminDashboard user={user} currentView={currentView} />;
       case UserRole.SUPER_ADMIN:
         return <SuperAdminDashboard user={user} currentView={currentView} />;
       default:

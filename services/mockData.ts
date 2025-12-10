@@ -1,4 +1,4 @@
-import { User, UserRole, Estate, SubscriptionTier, GuestPass, PassStatus, PassType, Announcement, LogEntry, Bill, BillStatus, BillType, IntercomSession, CallStatus } from '../types';
+import { User, UserRole, Estate, SubscriptionTier, GuestPass, PassStatus, PassType, Announcement, LogEntry, Bill, BillStatus, BillType, IntercomSession, CallStatus, ChatMessage, EmergencyAlert, GlobalAd, SystemLog } from '../types';
 
 // --- Seed Data ---
 
@@ -87,6 +87,19 @@ let BILLS: Bill[] = [
 ];
 
 let CALLS: IntercomSession[] = [];
+let MESSAGES: ChatMessage[] = [];
+let ALERTS: EmergencyAlert[] = [];
+
+let GLOBAL_ADS: GlobalAd[] = [
+  { id: 'ad_1', title: 'Fiber Internet Deal', content: 'Get 50% off for 3 months', impressions: 1450, isActive: true, createdAt: Date.now() },
+  { id: 'ad_2', title: 'Smart Lock Promo', content: 'Secure your door today', impressions: 890, isActive: true, createdAt: Date.now() - 86400000 },
+];
+
+let SYSTEM_LOGS: SystemLog[] = [
+  { id: 'log_1', action: 'LOGIN_SUCCESS', actor: 'admin@gatekeeper.com', details: 'Super Admin login from IP 192.168.1.1', timestamp: Date.now() - 300000, severity: 'INFO' },
+  { id: 'log_2', action: 'ESTATE_SUSPENDED', actor: 'admin@gatekeeper.com', details: 'Suspended Estate: Palm Springs', timestamp: Date.now() - 86400000, severity: 'WARN' },
+  { id: 'log_3', action: 'FAILED_LOGIN', actor: 'unknown', details: 'Failed login attempt for bob@sunset.com', timestamp: Date.now() - 120000, severity: 'WARN' },
+];
 
 // --- Service Methods ---
 
@@ -94,6 +107,14 @@ export const MockService = {
   login: async (email: string): Promise<User | null> => {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
+    SYSTEM_LOGS.unshift({
+        id: `log_${Date.now()}`,
+        action: 'LOGIN_ATTEMPT',
+        actor: email,
+        details: 'User attempted login',
+        timestamp: Date.now(),
+        severity: 'INFO'
+    });
     return USERS.find(u => u.email === email) || null;
   },
 
@@ -378,15 +399,35 @@ export const MockService = {
     return USERS.filter(u => u.estateId === estateId && u.role === UserRole.RESIDENT);
   },
 
-  initiateCall: (securityId: string, residentId: string): string => {
+  initiateCall: (initiatorId: string, targetId: string): string => {
+    const initiator = USERS.find(u => u.id === initiatorId);
+    let estateId = initiator?.estateId || '';
+    
+    // Determine who is resident and who is security (or simplified as Resident vs Gate)
+    let residentId = targetId;
+    let securityId = initiatorId;
+    let initiatorType: 'SECURITY' | 'RESIDENT' = 'SECURITY';
+
+    if (initiator?.role === UserRole.RESIDENT) {
+        residentId = initiatorId;
+        securityId = targetId || 'GATE'; // If target undefined, assume general gate
+        initiatorType = 'RESIDENT';
+    } else {
+        // Security calling resident
+        residentId = targetId;
+        securityId = initiatorId;
+    }
+    
     const resident = USERS.find(u => u.id === residentId);
-    const estateId = resident?.estateId || '';
+    estateId = resident?.estateId || estateId;
+
     const call: IntercomSession = {
         id: `call_${Date.now()}`,
         estateId,
         residentId,
         residentName: resident?.name || 'Resident',
         securityId,
+        initiator: initiatorType,
         status: CallStatus.RINGING,
         timestamp: Date.now()
     };
@@ -402,13 +443,65 @@ export const MockService = {
     CALLS = CALLS.map(c => c.id === callId ? { ...c, status: CallStatus.CONNECTED } : c);
   },
 
-  getIncomingCall: (residentId: string): IntercomSession | undefined => {
-    // Only return calls that are ringing or connected created in the last 60 seconds
-    return CALLS.find(c => 
-        c.residentId === residentId && 
+  getIncomingCall: (userId: string): IntercomSession | undefined => {
+    // Return calls where the user is the target
+    return CALLS.find(c => {
+        const isTarget = c.initiator === 'SECURITY' ? c.residentId === userId : c.securityId === 'GATE'; // Simulating gate receiving all resident calls
+        return isTarget && 
         (c.status === CallStatus.RINGING || c.status === CallStatus.CONNECTED) && 
-        c.timestamp > Date.now() - 60000
-    );
+        c.timestamp > Date.now() - 60000;
+    });
+  },
+
+  // Chat Methods
+  sendMessage: (fromId: string, toId: string, content: string) => {
+    const msg: ChatMessage = {
+      id: `msg_${Date.now()}`,
+      fromId,
+      toId,
+      content,
+      timestamp: Date.now(),
+      read: false
+    };
+    MESSAGES.push(msg);
+  },
+
+  getMessages: (userId: string, contactId: string): ChatMessage[] => {
+    return MESSAGES.filter(m => 
+      (m.fromId === userId && m.toId === contactId) || 
+      (m.fromId === contactId && m.toId === userId) ||
+      (m.fromId === contactId && m.toId === 'GATE' && userId === 'u_3') || // Hack for demo security ID
+      (m.fromId === userId && m.toId === 'GATE')
+    ).sort((a, b) => a.timestamp - b.timestamp);
+  },
+
+  // SOS Methods
+  sendSOS: (estateId: string, residentId: string, unitNumber: string) => {
+    const alert: EmergencyAlert = {
+      id: `alert_${Date.now()}`,
+      estateId,
+      residentId,
+      unitNumber,
+      status: 'ACTIVE',
+      timestamp: Date.now()
+    };
+    ALERTS.push(alert);
+    SYSTEM_LOGS.unshift({
+        id: `log_sos_${Date.now()}`,
+        action: 'SOS_ALERT',
+        actor: residentId,
+        details: `Emergency triggered by Unit ${unitNumber}`,
+        timestamp: Date.now(),
+        severity: 'CRITICAL'
+    });
+  },
+
+  getActiveAlerts: (estateId: string): EmergencyAlert[] => {
+    return ALERTS.filter(a => a.estateId === estateId && a.status === 'ACTIVE');
+  },
+
+  resolveAlert: (alertId: string) => {
+    ALERTS = ALERTS.map(a => a.id === alertId ? { ...a, status: 'RESOLVED' } : a);
   },
 
   // Admin Stats & Methods
@@ -459,6 +552,14 @@ export const MockService = {
         status: 'ACTIVE'
     };
     ESTATES = [...ESTATES, newEstate];
+    SYSTEM_LOGS.unshift({
+        id: `log_est_${Date.now()}`,
+        action: 'CREATE_ESTATE',
+        actor: 'SUPER_ADMIN',
+        details: `Created estate: ${name} (${code})`,
+        timestamp: Date.now(),
+        severity: 'INFO'
+    });
   },
 
   toggleEstateTier: (estateId: string) => {
@@ -476,9 +577,18 @@ export const MockService = {
   toggleEstateStatus: (estateId: string) => {
     ESTATES = ESTATES.map(e => {
         if (e.id === estateId) {
+            const newStatus = e.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+            SYSTEM_LOGS.unshift({
+                id: `log_stat_${Date.now()}`,
+                action: newStatus === 'SUSPENDED' ? 'SUSPEND_ESTATE' : 'ACTIVATE_ESTATE',
+                actor: 'SUPER_ADMIN',
+                details: `${newStatus} estate: ${e.name}`,
+                timestamp: Date.now(),
+                severity: 'WARN'
+            });
             return {
                 ...e,
-                status: e.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'
+                status: newStatus
             };
         }
         return e;
@@ -489,7 +599,55 @@ export const MockService = {
     return {
       totalEstates: ESTATES.length,
       totalUsers: USERS.length,
-      adImpressions: 14502
+      adImpressions: GLOBAL_ADS.reduce((acc, curr) => acc + curr.impressions, 0)
     };
+  },
+
+  // Super Admin Extended Controls
+  getAllUsers: (): User[] => {
+    return USERS;
+  },
+
+  deleteUser: (userId: string) => {
+    const user = USERS.find(u => u.id === userId);
+    USERS = USERS.filter(u => u.id !== userId);
+    SYSTEM_LOGS.unshift({
+        id: `log_del_${Date.now()}`,
+        action: 'DELETE_USER',
+        actor: 'SUPER_ADMIN',
+        details: `Deleted user: ${user?.email}`,
+        timestamp: Date.now(),
+        severity: 'CRITICAL'
+    });
+  },
+
+  getGlobalAds: (): GlobalAd[] => {
+    return GLOBAL_ADS;
+  },
+
+  createGlobalAd: (title: string, content: string) => {
+    const newAd: GlobalAd = {
+      id: `ad_${Date.now()}`,
+      title,
+      content,
+      impressions: 0,
+      isActive: true,
+      createdAt: Date.now()
+    };
+    GLOBAL_ADS = [newAd, ...GLOBAL_ADS];
+  },
+
+  updateGlobalAd: (adId: string, title: string, content: string, isActive: boolean) => {
+    GLOBAL_ADS = GLOBAL_ADS.map(ad =>
+      ad.id === adId ? { ...ad, title, content, isActive } : ad
+    );
+  },
+
+  deleteGlobalAd: (adId: string) => {
+    GLOBAL_ADS = GLOBAL_ADS.filter(a => a.id !== adId);
+  },
+
+  getSystemLogs: (): SystemLog[] => {
+    return SYSTEM_LOGS.sort((a, b) => b.timestamp - a.timestamp);
   }
 };
