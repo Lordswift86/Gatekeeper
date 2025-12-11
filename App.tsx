@@ -42,7 +42,7 @@ function App() {
       } else {
         setEstate(undefined); // Super Admin has no specific estate
       }
-      
+
       // Set default view based on role
       if (user.role === UserRole.SECURITY) setCurrentView('scanner');
       else if (user.role === UserRole.ESTATE_ADMIN) setCurrentView('overview');
@@ -76,9 +76,9 @@ function App() {
   };
 
   return (
-    <Layout 
-      user={user} 
-      estate={estate} 
+    <Layout
+      user={user}
+      estate={estate}
       onLogout={handleLogout}
       currentView={currentView}
       onChangeView={setCurrentView}
