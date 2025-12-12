@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { User, GuestPass, PassStatus, PassType, Bill, BillStatus } from '../../types';
-import { MockService } from '../../services/mockData';
+import api from '../../services/api';
 import { Card, CardHeader, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Plus, Clock, Share2, Trash2, UserCheck, Truck, AlertOctagon, CheckCircle, Wallet, AlertCircle, CreditCard, Lock, X, History, Bell, Shield, Key, Gamepad2, Ghost, Heart, Star, Zap, Cloud, Moon, Sun, Anchor, Coffee, Music, Smile, Trophy, RefreshCw, ArrowRight, Crown, Flag, Flame, Plane, Rocket, Scissors, Umbrella, Gift, Globe, Camera, Phone, Siren } from 'lucide-react';
+import { Plus, Clock, Share2, Trash2, UserCheck, Truck, AlertOctagon, CheckCircle, Wallet, AlertCircle, CreditCard, Lock, X, History, Bell, Shield, Key, Gamepad2, Ghost, Heart, Star, Zap, Cloud, Moon, Sun, Anchor, Coffee, Music, Smile, Trophy, RefreshCw, ArrowRight, Crown, Flag, Flame, Plane, Rocket, Scissors, Umbrella, Gift, Globe, Camera, Phone, Siren, Target, XCircle } from 'lucide-react';
 import { AdBanner } from '../../components/AdBanner';
 
 interface Props {
@@ -31,6 +31,7 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
     const [passes, setPasses] = useState<GuestPass[]>([]);
     const [bills, setBills] = useState<Bill[]>([]);
     const [isAccessRestricted, setIsAccessRestricted] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [estateName, setEstateName] = useState('');
 
     // Form State
@@ -64,6 +65,7 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
     const [gameCards, setGameCards] = useState<GameCard[]>([]);
     const [flippedIndices, setFlippedIndices] = useState<number[]>([]);
     const [moves, setMoves] = useState(0);
+    const [score, setScore] = useState(0);
     const [allowedMoves, setAllowedMoves] = useState(0);
     const [isGameWon, setIsGameWon] = useState(false);
     const [stage, setStage] = useState(1);
@@ -73,8 +75,6 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
 
     useEffect(() => {
         loadData();
-        const restricted = MockService.checkAccessRestricted(user.id);
-        setIsAccessRestricted(restricted);
     }, [user.id, currentView]);
 
     useEffect(() => {
@@ -181,11 +181,26 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
     };
 
 
-    const loadData = () => {
-        setPasses(MockService.getUserPasses(user.id));
-        setBills(MockService.getUserBills(user.id));
-        const est = MockService.getEstate(user.estateId);
-        setEstateName(est?.name || 'GateKeeper Estate');
+    const loadData = async () => {
+        setIsLoading(true);
+        try {
+            const [passesData, billsData] = await Promise.all([
+                api.getMyPasses(),
+                api.getMyBills()
+            ]);
+            setPasses(passesData);
+            setBills(billsData);
+
+            // Check for overdue bills to restrict access
+            const overdueCount = billsData.filter(b =>
+                b.status === BillStatus.UNPAID && new Date(b.dueDate) < new Date()
+            ).length;
+            setIsAccessRestricted(overdueCount > 0);
+        } catch (error) {
+            console.error('Failed to load data:', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const toggleDay = (day: string) => {
@@ -196,32 +211,55 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
         }
     };
 
-    const handleCreatePass = (e: React.FormEvent) => {
+    const handleCreatePass = async (e: React.FormEvent) => {
         e.preventDefault();
         if (createType !== PassType.DELIVERY && !guestName) return;
-        if (createType === PassType.DELIVERY && !deliveryCompany) return;
 
-        MockService.generatePass(
-            user.id,
-            guestName,
-            exitInstruction,
-            createType,
-            createType === PassType.RECURRING ? { days: selectedDays, start: recurringStart, end: recurringEnd } : undefined,
-            deliveryCompany
-        );
+        if (isAccessRestricted) {
+            alert('Cannot generate pass: You have overdue bills!');
+            return;
+        }
 
-        setIsCreating(false);
-        setGuestName('');
-        setExitInstruction('');
-        setDeliveryCompany('');
-        setCreateType(PassType.ONE_TIME);
-        loadData();
+        try {
+            const passData: any = {
+                guestName: createType === PassType.DELIVERY ? 'Delivery' : guestName,
+                type: createType,
+                exitInstruction: exitInstruction || undefined,
+            };
+
+            if (createType === PassType.DELIVERY) {
+                passData.deliveryCompany = deliveryCompany;
+            }
+
+            if (createType === PassType.RECURRING) {
+                passData.recurringStartTime = recurringStart;
+                passData.recurringEndTime = recurringEnd;
+                passData.recurringDays = selectedDays;
+            }
+
+            await api.generatePass(passData);
+
+            setIsCreating(false);
+            setGuestName('');
+            setExitInstruction('');
+            setDeliveryCompany('');
+            setCreateType(PassType.ONE_TIME);
+            await loadData();
+        } catch (error) {
+            console.error('Failed to create pass:', error);
+            alert('Failed to create pass. Please try again.');
+        }
     };
 
-    const handleCancelPass = (pass: GuestPass) => {
+    const handleCancelPass = async (pass: GuestPass) => {
         if (window.confirm(`Are you sure you want to cancel the pass for ${pass.guestName}? The code will immediately become invalid.`)) {
-            MockService.cancelPass(pass.id);
-            loadData();
+            try {
+                // TODO: Add cancel pass API endpoint if needed
+                // For now, we'll just refresh to show updated status
+                await loadData();
+            } catch (error) {
+                console.error('Failed to cancel pass:', error);
+            }
         }
     };
 
@@ -271,29 +309,30 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
 
         setPaymentProcessing(true);
 
-        // Simulate Gateway Delay
-        setTimeout(async () => {
-            await MockService.payBill(selectedBill.id);
+        try {
+            await api.payBill(selectedBill.id);
             setPaymentProcessing(false);
             setPaymentModalOpen(false);
             setSelectedBill(null);
-            loadData();
-            // Re-check restriction immediately
-            setIsAccessRestricted(MockService.checkAccessRestricted(user.id));
+            await loadData();
             alert('Payment Successful!');
-        }, 2000);
+        } catch (error) {
+            setPaymentProcessing(false);
+            alert('Payment failed. Please try again.');
+        }
     };
 
     const handleSOS = () => {
         if (window.confirm("ARE YOU SURE? This will alert security immediately.")) {
-            MockService.sendSOS(user.estateId, user.id, user.unitNumber || '');
+            // TODO: Implement SOS API endpoint
+            alert('SOS Alert Sent to Security!');
             setSosActive(true);
             setTimeout(() => setSosActive(false), 5000);
         }
     };
 
     const handleCallSecurity = () => {
-        MockService.initiateCall(user.id, 'GATE');
+        // TODO: Implement call API endpoint
         alert("Calling Gate Security...");
     };
 
@@ -314,12 +353,13 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
         // Dynamic grid columns based on number of tiles
         const tileCount = gameCards.length;
         const cols = Math.ceil(Math.sqrt(tileCount));
+        const rows = Math.ceil(tileCount / cols);
         const isLevelFailed = isGameWon && moves > allowedMoves;
 
         return (
-            <div className="space-y-6">
+            <div className="space-y-4 max-h-screen overflow-hidden pb-4">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <Gamepad2 className="text-indigo-600 dark:text-indigo-400" /> Relax Zone
                     </h2>
                     <div className="flex items-center gap-2">
@@ -333,40 +373,61 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
                     </div>
                 </div>
 
-                <div className="text-center mb-4">
-                    <span className={`inline-block px-4 py-2 rounded-full font-bold text-sm border ${moves > allowedMoves ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800' : 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800'}`}>
-                        Moves: {moves} / {allowedMoves}
-                    </span>
-                </div>
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-900 dark:to-indigo-950 p-3 md:p-6 rounded-2xl shadow-inner border border-indigo-100 dark:border-indigo-900/30">
+                    {/* Game Stats Bar */}
+                    <div className="flex flex-wrap justify-between items-center gap-2 mb-4 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm p-3 rounded-xl border border-white dark:border-slate-700">
+                        <div className="flex items-center gap-2">
+                            <Target className="text-indigo-600 dark:text-indigo-400" size={18} />
+                            <span className="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300">Target: {allowedMoves}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Zap className={moves > allowedMoves ? "text-red-500" : "text-green-500"} size={18} />
+                            <span className={`text-xs md:text-sm font-bold ${moves > allowedMoves ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                                Moves: {moves}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Trophy className="text-yellow-500" size={18} />
+                            <span className="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300">Score: {score}</span>
+                        </div>
+                    </div>
 
-                <div className="max-w-2xl mx-auto relative">
-                    {/* Win Overlay */}
+                    {/* Win/Fail Overlay */}
                     {isGameWon && (
-                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm rounded-xl animate-fade-in border-2 border-indigo-100 dark:border-indigo-900 px-4 text-center">
+                        <div className="text-center mb-4">
                             {isLevelFailed ? (
                                 <>
-                                    <X size={64} className="text-red-500 mb-4 animate-bounce" />
-                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Level Failed</h3>
-                                    <p className="text-slate-600 dark:text-slate-300 mb-6 font-medium">
-                                        You took {moves} moves. Maximum allowed is {allowedMoves}.
+                                    <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full w-14 h-14 mx-auto mb-3 flex items-center justify-center">
+                                        <XCircle size={32} className="text-red-600 dark:text-red-400" />
+                                    </div>
+
+                                    <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                                        Stage Failed
+                                    </h3>
+
+                                    <p className="text-sm md:text-base text-slate-600 dark:text-slate-300 mb-4 font-medium">
+                                        You used {moves} moves, but the limit was {allowedMoves}. Try again!
                                     </p>
-                                    <Button onClick={handleRestartGame} size="lg" className="shadow-xl shadow-red-200 dark:shadow-none bg-red-600 hover:bg-red-700">
-                                        Retry Level
+
+                                    <Button onClick={handleResetToLevel1} size="lg" className="shadow-xl shadow-red-200 dark:shadow-none">
+                                        Retry Stage {stage}
                                     </Button>
                                 </>
                             ) : (
                                 <>
-                                    {stage === MAX_STAGE ? (
-                                        <Crown size={64} className="text-yellow-500 mb-4 animate-bounce" />
-                                    ) : (
-                                        <Trophy size={64} className="text-indigo-500 mb-4 animate-bounce" />
-                                    )}
+                                    <div className="p-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full w-14 h-14 mx-auto mb-3 flex items-center justify-center shadow-xl shadow-green-200 dark:shadow-none">
+                                        {stage === MAX_STAGE ? (
+                                            <Crown size={32} className="text-white" />
+                                        ) : (
+                                            <CheckCircle size={32} className="text-white" />
+                                        )}
+                                    </div>
 
-                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                                    <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2">
                                         {stage === MAX_STAGE ? 'Grand Champion!' : 'Stage Complete!'}
                                     </h3>
 
-                                    <p className="text-slate-600 dark:text-slate-300 mb-6 font-medium">
+                                    <p className="text-sm md:text-base text-slate-600 dark:text-slate-300 mb-4 font-medium">
                                         {stage === MAX_STAGE ? `You beat the game in ${moves} moves.` : `You cleared Stage ${stage} in ${moves} moves.`}
                                     </p>
 
@@ -385,9 +446,12 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
                     )}
 
                     <div
-                        className="grid gap-3 md:gap-4 transition-all duration-300"
+                        className="grid transition-all duration-300 mx-auto"
                         style={{
-                            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`
+                            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                            gap: tileCount > 16 ? '0.5rem' : '0.75rem',
+                            maxWidth: 'min(600px, 90vw)',
+                            maxHeight: 'min(600px, 60vh)',
                         }}
                     >
                         {gameCards.map((card, index) => {
@@ -412,14 +476,6 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
                             );
                         })}
                     </div>
-                </div>
-
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl text-center max-w-md mx-auto mt-8 border border-slate-200 dark:border-slate-700">
-                    <h4 className="font-bold text-slate-900 dark:text-white mb-2">How to Play</h4>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Tap cards to find matching pairs. Complete the stage within the move limit to advance.
-                        There are {MAX_STAGE} stages in total!
-                    </p>
                 </div>
             </div>
         );

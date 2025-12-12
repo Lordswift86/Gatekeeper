@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gatekeeper_resident/models/pass.dart';
 import 'package:gatekeeper_resident/models/user.dart';
-import 'package:gatekeeper_resident/services/mock_service.dart';
+import 'package:gatekeeper_resident/services/api_client.dart';
 import 'package:gatekeeper_resident/widgets/pass_card.dart';
 import 'package:gatekeeper_resident/widgets/custom_button.dart';
 import 'package:gatekeeper_resident/widgets/ad_banner.dart';
@@ -15,49 +15,83 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final MockService _service = MockService();
   User? _user;
   List<GuestPass> _activePasses = [];
   bool _isAccessRestricted = false;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _user = _service.currentUser;
-    _refreshData();
+    _loadData();
   }
 
-  void _refreshData() {
-    if (_user == null) return;
-    setState(() {
-      _activePasses = _service.getUserPasses(_user!.id)
-          .where((p) => p.status == PassStatus.ACTIVE || p.status == PassStatus.CHECKED_IN)
-          .toList();
-      _isAccessRestricted = _service.checkAccessRestricted(_user!.id);
-    });
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      final user = await ApiClient.getUserProfile();
+      final passes = await ApiClient.getUserPasses();
+      
+      setState(() {
+        _user = user;
+        _activePasses = passes
+            .where((p) => p.status == PassStatus.active || p.status == PassStatus.checkedIn)
+            .toList();
+        // TODO: Check access restriction based on overdue bills
+        _isAccessRestricted = false;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load data: $e')),
+      );
+    }
   }
 
-  void _createPass(PassType type) {
+  void _createPass(PassType type) async {
     if (_isAccessRestricted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Access Restricted: Please pay overdue bills.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Access Restricted: Please pay overdue bills.')),
+      );
       return;
     }
-    // Simple dialog for creation
+    
     showDialog(
       context: context,
       builder: (context) => CreatePassDialog(
         type: type,
         onCreated: () {
-          _refreshData();
+          _loadData();
           Navigator.pop(context);
         },
       ),
     );
   }
 
+  Future<void> _handleLogout() async {
+    await ApiClient.logout();
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/login');
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (_user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_user == null) {
+      return const Scaffold(
+        body: Center(child: Text('Failed to load user data')),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -69,9 +103,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-               Navigator.pushReplacementNamed(context, '/login');
-            },
+            onPressed: _handleLogout,
           ),
         ],
       ),
@@ -92,7 +124,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async => _refreshData(),
+        onRefresh: _loadData,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -134,7 +166,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
 
-
             const SizedBox(height: 24),
 
             // Ad Banner (Inline)
@@ -152,7 +183,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: LucideIcons.plus,
                     label: 'New Guest',
                     color: Colors.indigo,
-                    onTap: () => _createPass(PassType.ONE_TIME),
+                    onTap: () => _createPass(PassType.oneTime),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -161,7 +192,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: LucideIcons.truck,
                     label: 'Delivery',
                     color: Colors.orange,
-                    onTap: () => _createPass(PassType.DELIVERY),
+                    onTap: () => _createPass(PassType.delivery),
                   ),
                 ),
               ],
@@ -180,9 +211,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             else
               ..._activePasses.map((pass) => PassCard(
                 pass: pass,
-                onCancel: () {
-                   _service.cancelPass(pass.id);
-                   _refreshData();
+                onCancel: () async {
+                  // TODO: Implement cancel pass API
+                  await _loadData();
                 },
               )),
           ],
@@ -236,11 +267,47 @@ class CreatePassDialog extends StatefulWidget {
 
 class _CreatePassDialogState extends State<CreatePassDialog> {
   final _nameController = TextEditingController();
-  final MockService _service = MockService();
+  final _notesController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleCreate() async {
+    if (_nameController.text.isEmpty) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final isDelivery = widget.type == PassType.delivery;
+      
+      await ApiClient.generatePass(
+        guestName: isDelivery ? 'Delivery' : _nameController.text,
+        type: widget.type.name,
+        exitInstruction: _notesController.text.isEmpty ? null : _notesController.text,
+        deliveryCompany: isDelivery ? _nameController.text : null,
+      );
+
+      if (!mounted) return;
+      widget.onCreated();
+    } catch (e) {
+      if (!mounted) return;
+      
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to create pass: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isDelivery = widget.type == PassType.DELIVERY;
+    final isDelivery = widget.type == PassType.delivery;
+    
     return AlertDialog(
       title: Text(isDelivery ? 'Expected Delivery' : 'New Guest'),
       content: Column(
@@ -249,26 +316,37 @@ class _CreatePassDialogState extends State<CreatePassDialog> {
           TextField(
             controller: _nameController,
             decoration: InputDecoration(
-              labelText: isDelivery ? 'Delivery Company (e.g. Uber)' : 'Guest Name',
+              labelText: isDelivery ? 'Delivery Company (e.g. UberEats)' : 'Guest Name',
               border: const OutlineInputBorder(),
             ),
+            enabled: !_isLoading,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _notesController,
+            decoration: const InputDecoration(
+              labelText: 'Notes (optional)',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 2,
+            enabled: !_isLoading,
           ),
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
-          onPressed: () {
-            if (_nameController.text.isEmpty) return;
-            _service.generatePass(
-              userId: _service.currentUser!.id,
-              guestName: isDelivery ? 'Delivery' : _nameController.text,
-              type: widget.type,
-              deliveryCompany: isDelivery ? _nameController.text : null,
-            );
-            widget.onCreated();
-          },
-          child: const Text('Create'),
+          onPressed: _isLoading ? null : _handleCreate,
+          child: _isLoading 
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Text('Create'),
         ),
       ],
     );

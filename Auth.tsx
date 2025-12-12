@@ -1,106 +1,96 @@
 import React, { useState } from 'react';
-import { MockService } from './services/mockData';
 import { User } from './types';
-import { ShieldCheck, User as UserIcon, Lock } from 'lucide-react';
+import api from './services/api';
 
-interface Props {
+interface AuthProps {
   onLogin: (user: User) => void;
 }
 
-export const Auth: React.FC<Props> = ({ onLogin }) => {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
+  const [email, setEmail] = useState('admin@gatekeeper.com');
+  const [password, setPassword] = useState('password123');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const user = await MockService.login(email);
-      if (user) {
-        onLogin(user);
-      } else {
-        setError('User not found. Try one of the demo accounts below.');
-      }
-    } catch (err) {
-      setError('An error occurred');
-    } finally {
-      setLoading(false);
+      const { user } = await api.login(email, password);
+      onLogin(user);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setIsLoading(false);
     }
   };
 
-  const handleQuickLogin = (email: string) => {
-    setEmail(email);
-  };
-
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-        <div className="bg-indigo-600 p-8 text-center">
-          <div className="bg-white/20 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-            <ShieldCheck className="text-white w-10 h-10" />
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-block p-3 bg-indigo-100 dark:bg-indigo-900 rounded-full mb-4">
+            <svg className="w-12 h-12 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white">GateKeeper</h1>
-          <p className="text-indigo-200 mt-2 text-sm">Secure Entry Management System</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Gatekeeper</h1>
+          <p className="text-gray-600 dark:text-gray-400">Estate Management System</p>
         </div>
 
-        <div className="p-8">
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <UserIcon className="h-5 w-5 text-slate-400" />
-                </div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="name@example.com"
-                  required
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Signing In...' : 'Sign In'}
-            </button>
-          </form>
-
-          <div className="mt-8">
-            <p className="text-center text-xs text-slate-400 uppercase font-bold tracking-wider mb-4">Quick Demo Logins</p>
-            <div className="space-y-2">
-              <button onClick={() => handleQuickLogin('admin@gatekeeper.com')} className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded border border-slate-100 flex justify-between group">
-                <span>Super Admin</span>
-                <span className="text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
-              </button>
-              <button onClick={() => handleQuickLogin('bob@sunset.com')} className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded border border-slate-100 flex justify-between group">
-                <span>Resident (Free Estate)</span>
-                <span className="text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
-              </button>
-              <button onClick={() => handleQuickLogin('sam@sunset.com')} className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded border border-slate-100 flex justify-between group">
-                <span>Security Guard</span>
-                <span className="text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
-              </button>
-              <button onClick={() => handleQuickLogin('alice@sunset.com')} className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded border border-slate-100 flex justify-between group">
-                <span>Estate Admin</span>
-                <span className="text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
-              </button>
-            </div>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+              required
+              disabled={isLoading}
+            />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+              required
+              disabled={isLoading}
+            />
+          </div>
+
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+          >
+            {isLoading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
+
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+            Test Credentials:<br />
+            Super Admin: admin@gatekeeper.com / password123<br />
+            Estate Admin: alice@sunset.com / password123<br />
+            Resident: bob@sunset.com / password123<br />
+            Security: sam@sunset.com / password123
+          </p>
         </div>
       </div>
     </div>

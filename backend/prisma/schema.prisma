@@ -1,0 +1,178 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Note: SQLite doesn't support enums, so we use String types with validation in code
+
+model Estate {
+  id               String    @id @default(uuid())
+  name             String
+  code             String    @unique
+  subscriptionTier String    @default("FREE") // 'FREE' | 'PREMIUM'
+  status           String    @default("ACTIVE") // 'ACTIVE' | 'SUSPENDED'
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  users            User[]
+  announcements    Announcement[]
+  bills            Bill[]
+  logs             LogEntry[]
+  intercomSessions IntercomSession[]
+  alerts           EmergencyAlert[]
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  name        String
+  role        String // 'SUPER_ADMIN' | 'ESTATE_ADMIN' | 'RESIDENT' | 'SECURITY'
+  estateId    String?
+  unitNumber  String?
+  isApproved  Boolean  @default(false)
+  
+  estate      Estate?  @relation(fields: [estateId], references: [id])
+  
+  guestPasses GuestPass[]
+  bills       Bill[]
+  
+  sentMessages     ChatMessage[] @relation("SentMessages")
+  receivedMessages ChatMessage[] @relation("ReceivedMessages")
+  
+  residentCallSessions IntercomSession[] @relation("ResidentSessions")
+  securityCallSessions IntercomSession[] @relation("SecuritySessions")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GuestPass {
+  id               String     @id @default(uuid())
+  code             String     @unique
+  hostId           String
+  guestName        String
+  hostUnit         String?
+  
+  status           String     @default("ACTIVE") // 'ACTIVE' | 'CHECKED_IN' | 'EXPIRED' | 'CANCELLED'
+  type             String     @default("ONE_TIME") // 'ONE_TIME' | 'RECURRING' | 'DELIVERY'
+  
+  validFrom        DateTime   @default(now())
+  validUntil       DateTime
+  
+  entryTime        DateTime?
+  exitTime         DateTime?
+  
+  exitInstruction  String?
+  
+  recurringDays    String?
+  recurringTimeStart String?
+  recurringTimeEnd   String?
+  
+  plateNumber      String?
+  deliveryCompany  String?
+
+  host             User       @relation(fields: [hostId], references: [id])
+  
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  estateId  String
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  
+  estate    Estate   @relation(fields: [estateId], references: [id])
+}
+
+model LogEntry {
+  id          String   @id @default(uuid())
+  estateId    String
+  guestName   String
+  destination String
+  entryTime   DateTime @default(now())
+  exitTime    DateTime?
+  type        String // 'MANUAL' | 'DIGITAL'
+  notes       String?
+  
+  estate      Estate   @relation(fields: [estateId], references: [id])
+}
+
+model Bill {
+  id          String     @id @default(uuid())
+  estateId    String
+  userId      String
+  type        String // 'SERVICE_CHARGE' | 'POWER' | 'WASTE' | 'WATER'
+  amount      Float
+  dueDate     DateTime
+  status      String     @default("UNPAID") // 'PAID' | 'UNPAID'
+  paidAt      DateTime?
+  description String
+  
+  estate      Estate     @relation(fields: [estateId], references: [id])
+  user        User       @relation(fields: [userId], references: [id])
+}
+
+model IntercomSession {
+  id           String     @id @default(uuid())
+  estateId     String
+  residentId   String
+  securityId   String?
+  initiator    String // 'SECURITY' | 'RESIDENT'
+  status       String     @default("RINGING") // 'RINGING' | 'CONNECTED' | 'ENDED'
+  createdAt    DateTime   @default(now())
+  endedAt      DateTime?
+  
+  estate       Estate     @relation(fields: [estateId], references: [id])
+  resident     User       @relation("ResidentSessions", fields: [residentId], references: [id])
+  security     User?      @relation("SecuritySessions", fields: [securityId], references: [id])
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  fromId    String
+  toId      String
+  content   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  fromUser  User     @relation("SentMessages", fields: [fromId], references: [id])
+  toUser    User     @relation("ReceivedMessages", fields: [toId], references: [id])
+}
+
+model EmergencyAlert {
+  id         String   @id @default(uuid())
+  estateId   String
+  residentId String
+  unitNumber String
+  status     String // 'ACTIVE' | 'RESOLVED'
+  createdAt  DateTime @default(now())
+  
+  estate     Estate   @relation(fields: [estateId], references: [id])
+}
+
+model GlobalAd {
+  id          String   @id @default(uuid())
+  title       String
+  content     String
+  imageUrl    String?
+  impressions Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model SystemLog {
+  id        String   @id @default(uuid())
+  action    String
+  actor     String
+  details   String
+  severity  String // 'INFO' | 'WARN' | 'CRITICAL'
+  createdAt DateTime @default(now())
+}
