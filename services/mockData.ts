@@ -11,19 +11,19 @@ let ESTATES: Estate[] = [
 let USERS: User[] = [
   // Super Admin
   { id: 'u_0', name: 'Super Admin', email: 'admin@gatekeeper.com', role: UserRole.SUPER_ADMIN, estateId: '', isApproved: true },
-  
+
   // Estate Admin (Sunset Gardens - Free)
   { id: 'u_1', name: 'Alice Admin', email: 'alice@sunset.com', role: UserRole.ESTATE_ADMIN, estateId: 'est_1', isApproved: true },
-  
+
   // Resident (Sunset Gardens - Free)
   { id: 'u_2', name: 'Bob Resident', email: 'bob@sunset.com', role: UserRole.RESIDENT, estateId: 'est_1', unitNumber: '101', isApproved: true },
-  
+
   // Unapproved Resident (Sunset Gardens)
   { id: 'u_99', name: 'New Guy', email: 'new@sunset.com', role: UserRole.RESIDENT, estateId: 'est_1', unitNumber: '105', isApproved: false },
 
   // Security (Sunset Gardens - Free)
   { id: 'u_3', name: 'Sam Security', email: 'sam@sunset.com', role: UserRole.SECURITY, estateId: 'est_1', isApproved: true },
-  
+
   // Resident (Royal Heights - Premium)
   { id: 'u_4', name: 'Richie Rich', email: 'richie@royal.com', role: UserRole.RESIDENT, estateId: 'est_2', unitNumber: 'PH-1', isApproved: true },
 ];
@@ -64,25 +64,25 @@ let ANNOUNCEMENTS: Announcement[] = [
 ];
 
 let BILLS: Bill[] = [
-  { 
-    id: 'b_1', 
-    estateId: 'est_1', 
-    userId: 'u_2', 
-    type: BillType.SERVICE_CHARGE, 
-    amount: 150.00, 
+  {
+    id: 'b_1',
+    estateId: 'est_1',
+    userId: 'u_2',
+    type: BillType.SERVICE_CHARGE,
+    amount: 150.00,
     dueDate: Date.now() - (86400000 * 35), // 35 days overdue
-    status: BillStatus.UNPAID, 
-    description: 'September 2023 Service Charge' 
+    status: BillStatus.UNPAID,
+    description: 'September 2023 Service Charge'
   },
-  { 
-    id: 'b_2', 
-    estateId: 'est_1', 
-    userId: 'u_2', 
-    type: BillType.POWER, 
-    amount: 45.50, 
+  {
+    id: 'b_2',
+    estateId: 'est_1',
+    userId: 'u_2',
+    type: BillType.POWER,
+    amount: 45.50,
     dueDate: Date.now() + (86400000 * 10), // Future
-    status: BillStatus.UNPAID, 
-    description: 'October Power Bill' 
+    status: BillStatus.UNPAID,
+    description: 'October Power Bill'
   }
 ];
 
@@ -91,8 +91,8 @@ let MESSAGES: ChatMessage[] = [];
 let ALERTS: EmergencyAlert[] = [];
 
 let GLOBAL_ADS: GlobalAd[] = [
-  { id: 'ad_1', title: 'Fiber Internet Deal', content: 'Get 50% off for 3 months', impressions: 1450, isActive: true, createdAt: Date.now() },
-  { id: 'ad_2', title: 'Smart Lock Promo', content: 'Secure your door today', impressions: 890, isActive: true, createdAt: Date.now() - 86400000 },
+  { id: 'ad_1', title: 'Kitaniz Vehicle Registration service', content: 'Renew Vehicle Documents, New Registration and Change of Ownership', impressions: 1450, isActive: true, createdAt: Date.now() },
+  { id: 'ad_2', title: 'Kitaniz Vehicle Registration Service', content: 'Renew Vehicle Documents, New Registration and Change of Ownership', impressions: 890, isActive: true, createdAt: Date.now() - 86400000 },
 ];
 
 let SYSTEM_LOGS: SystemLog[] = [
@@ -108,19 +108,19 @@ export const MockService = {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
     SYSTEM_LOGS.unshift({
-        id: `log_${Date.now()}`,
-        action: 'LOGIN_ATTEMPT',
-        actor: email,
-        details: 'User attempted login',
-        timestamp: Date.now(),
-        severity: 'INFO'
+      id: `log_${Date.now()}`,
+      action: 'LOGIN_ATTEMPT',
+      actor: email,
+      details: 'User attempted login',
+      timestamp: Date.now(),
+      severity: 'INFO'
     });
     return USERS.find(u => u.email === email) || null;
   },
 
-  register: async (name: string, email: string, role: UserRole, estateCode: string, unitNumber?: string): Promise<{success: boolean, message?: string, user?: User}> => {
+  register: async (name: string, email: string, role: UserRole, estateCode: string, unitNumber?: string): Promise<{ success: boolean, message?: string, user?: User }> => {
     await new Promise(resolve => setTimeout(resolve, 800));
-    
+
     // Check if email exists
     if (USERS.find(u => u.email === email)) {
       return { success: false, message: 'Email already exists' };
@@ -160,9 +160,9 @@ export const MockService = {
   },
 
   generatePass: (
-    userId: string, 
-    guestName: string, 
-    exitInstruction?: string, 
+    userId: string,
+    guestName: string,
+    exitInstruction?: string,
     type: PassType = PassType.ONE_TIME,
     schedule?: { days: string[], start: string, end: string },
     deliveryCompany?: string
@@ -206,23 +206,23 @@ export const MockService = {
     await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network/sync
 
     const pass = PASSES.find(p => p.code === code);
-    
+
     if (!pass) return { success: false, message: 'Invalid Code' };
-    
+
     // Validate Estate mismatch
     const host = USERS.find(u => u.id === pass.hostId);
     if (host && host.estateId !== estateId) {
-        return { success: false, message: 'Code belongs to a different estate.' };
+      return { success: false, message: 'Code belongs to a different estate.' };
     }
 
     if (pass.status === PassStatus.CANCELLED) return { success: false, message: 'Code has been cancelled by host.' };
-    
+
     // Check Expiry
     if (pass.type === PassType.ONE_TIME || pass.type === PassType.DELIVERY) {
       if (pass.status === PassStatus.EXPIRED) return { success: false, message: 'Code expired.' };
       if (pass.validUntil < Date.now()) {
-          pass.status = PassStatus.EXPIRED;
-          return { success: false, message: 'Code expired.' };
+        pass.status = PassStatus.EXPIRED;
+        return { success: false, message: 'Code expired.' };
       }
     }
 
@@ -231,37 +231,37 @@ export const MockService = {
 
   getExpectedDeliveries: (estateId: string): GuestPass[] => {
     return PASSES.filter(p => {
-       const host = USERS.find(u => u.id === p.hostId);
-       return host?.estateId === estateId && p.type === PassType.DELIVERY && p.status === PassStatus.ACTIVE;
+      const host = USERS.find(u => u.id === p.hostId);
+      return host?.estateId === estateId && p.type === PassType.DELIVERY && p.status === PassStatus.ACTIVE;
     });
   },
 
   verifyDelivery: (passId: string, plateNumber: string, company?: string) => {
     PASSES = PASSES.map(p => {
       if (p.id === passId) {
-        return { 
-          ...p, 
-          status: PassStatus.CHECKED_IN, 
-          entryTime: Date.now(), 
+        return {
+          ...p,
+          status: PassStatus.CHECKED_IN,
+          entryTime: Date.now(),
           plateNumber,
-          deliveryCompany: company || p.deliveryCompany 
+          deliveryCompany: company || p.deliveryCompany
         };
       }
       return p;
     });
-    
+
     const pass = PASSES.find(p => p.id === passId);
     if (pass) {
-        const estateId = USERS.find(u => u.id === pass.hostId)?.estateId || '';
-        LOGS.push({
-            id: `l_del_${Date.now()}`,
-            estateId,
-            guestName: pass.guestName,
-            destination: `Unit ${pass.hostUnit}`,
-            entryTime: Date.now(),
-            type: 'DIGITAL',
-            notes: `Delivery (${pass.deliveryCompany}) - Plate: ${plateNumber}`
-        });
+      const estateId = USERS.find(u => u.id === pass.hostId)?.estateId || '';
+      LOGS.push({
+        id: `l_del_${Date.now()}`,
+        estateId,
+        guestName: pass.guestName,
+        destination: `Unit ${pass.hostUnit}`,
+        entryTime: Date.now(),
+        type: 'DIGITAL',
+        notes: `Delivery (${pass.deliveryCompany}) - Plate: ${plateNumber}`
+      });
     }
   },
 
@@ -270,7 +270,7 @@ export const MockService = {
     if (!pass) return;
 
     PASSES = PASSES.map(p => p.id === passId ? { ...p, status: PassStatus.CHECKED_IN, entryTime: Date.now() } : p);
-    
+
     // Create Log Entry
     const log: LogEntry = {
       id: `l_${Date.now()}`,
@@ -307,33 +307,33 @@ export const MockService = {
   },
 
   syncOfflineActions: async (actions: { type: 'ENTRY' | 'EXIT'; passId: string; timestamp: number }[]) => {
-    await new Promise(resolve => setTimeout(resolve, 1500)); 
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     actions.forEach(action => {
       const pass = PASSES.find(p => p.id === action.passId);
       if (!pass) return;
 
       if (action.type === 'ENTRY') {
-        if (pass.status !== PassStatus.CHECKED_IN) { 
-            pass.status = PassStatus.CHECKED_IN;
-            pass.entryTime = action.timestamp;
-            
-            const estateId = USERS.find(u => u.id === pass.hostId)?.estateId || '';
-            LOGS.push({
-              id: `l_sync_${Date.now()}_${Math.random()}`,
-              estateId,
-              guestName: pass.guestName,
-              destination: `Unit ${pass.hostUnit}`,
-              entryTime: action.timestamp,
-              type: 'DIGITAL',
-              notes: 'Synced Entry'
-            });
+        if (pass.status !== PassStatus.CHECKED_IN) {
+          pass.status = PassStatus.CHECKED_IN;
+          pass.entryTime = action.timestamp;
+
+          const estateId = USERS.find(u => u.id === pass.hostId)?.estateId || '';
+          LOGS.push({
+            id: `l_sync_${Date.now()}_${Math.random()}`,
+            estateId,
+            guestName: pass.guestName,
+            destination: `Unit ${pass.hostUnit}`,
+            entryTime: action.timestamp,
+            type: 'DIGITAL',
+            notes: 'Synced Entry'
+          });
         }
       } else if (action.type === 'EXIT') {
         const newStatus = pass.type === PassType.RECURRING ? PassStatus.ACTIVE : PassStatus.EXPIRED;
         pass.status = newStatus;
         pass.exitTime = action.timestamp;
-        
+
         const log = LOGS.find(l => l.guestName === pass.guestName && !l.exitTime);
         if (log) log.exitTime = action.timestamp;
       }
@@ -364,7 +364,7 @@ export const MockService = {
   getUserBills: (userId: string): Bill[] => {
     return BILLS.filter(b => b.userId === userId);
   },
-  
+
   getEstateBills: (estateId: string): Bill[] => {
     return BILLS.filter(b => b.estateId === estateId).sort((a, b) => b.dueDate - a.dueDate);
   },
@@ -382,14 +382,14 @@ export const MockService = {
 
   createBill: (estateId: string, userId: string, type: BillType, amount: number, dueDate: number, description: string) => {
     const newBill: Bill = {
-        id: `b_${Date.now()}`,
-        estateId,
-        userId,
-        type,
-        amount,
-        dueDate,
-        status: BillStatus.UNPAID,
-        description
+      id: `b_${Date.now()}`,
+      estateId,
+      userId,
+      type,
+      amount,
+      dueDate,
+      status: BillStatus.UNPAID,
+      description
     };
     BILLS = [newBill, ...BILLS];
   },
@@ -402,34 +402,34 @@ export const MockService = {
   initiateCall: (initiatorId: string, targetId: string): string => {
     const initiator = USERS.find(u => u.id === initiatorId);
     let estateId = initiator?.estateId || '';
-    
+
     // Determine who is resident and who is security (or simplified as Resident vs Gate)
     let residentId = targetId;
     let securityId = initiatorId;
     let initiatorType: 'SECURITY' | 'RESIDENT' = 'SECURITY';
 
     if (initiator?.role === UserRole.RESIDENT) {
-        residentId = initiatorId;
-        securityId = targetId || 'GATE'; // If target undefined, assume general gate
-        initiatorType = 'RESIDENT';
+      residentId = initiatorId;
+      securityId = targetId || 'GATE'; // If target undefined, assume general gate
+      initiatorType = 'RESIDENT';
     } else {
-        // Security calling resident
-        residentId = targetId;
-        securityId = initiatorId;
+      // Security calling resident
+      residentId = targetId;
+      securityId = initiatorId;
     }
-    
+
     const resident = USERS.find(u => u.id === residentId);
     estateId = resident?.estateId || estateId;
 
     const call: IntercomSession = {
-        id: `call_${Date.now()}`,
-        estateId,
-        residentId,
-        residentName: resident?.name || 'Resident',
-        securityId,
-        initiator: initiatorType,
-        status: CallStatus.RINGING,
-        timestamp: Date.now()
+      id: `call_${Date.now()}`,
+      estateId,
+      residentId,
+      residentName: resident?.name || 'Resident',
+      securityId,
+      initiator: initiatorType,
+      status: CallStatus.RINGING,
+      timestamp: Date.now()
     };
     CALLS.push(call);
     return call.id;
@@ -446,9 +446,9 @@ export const MockService = {
   getIncomingCall: (userId: string): IntercomSession | undefined => {
     // Return calls where the user is the target
     return CALLS.find(c => {
-        const isTarget = c.initiator === 'SECURITY' ? c.residentId === userId : c.securityId === 'GATE'; // Simulating gate receiving all resident calls
-        return isTarget && 
-        (c.status === CallStatus.RINGING || c.status === CallStatus.CONNECTED) && 
+      const isTarget = c.initiator === 'SECURITY' ? c.residentId === userId : c.securityId === 'GATE'; // Simulating gate receiving all resident calls
+      return isTarget &&
+        (c.status === CallStatus.RINGING || c.status === CallStatus.CONNECTED) &&
         c.timestamp > Date.now() - 60000;
     });
   },
@@ -467,8 +467,8 @@ export const MockService = {
   },
 
   getMessages: (userId: string, contactId: string): ChatMessage[] => {
-    return MESSAGES.filter(m => 
-      (m.fromId === userId && m.toId === contactId) || 
+    return MESSAGES.filter(m =>
+      (m.fromId === userId && m.toId === contactId) ||
       (m.fromId === contactId && m.toId === userId) ||
       (m.fromId === contactId && m.toId === 'GATE' && userId === 'u_3') || // Hack for demo security ID
       (m.fromId === userId && m.toId === 'GATE')
@@ -487,12 +487,12 @@ export const MockService = {
     };
     ALERTS.push(alert);
     SYSTEM_LOGS.unshift({
-        id: `log_sos_${Date.now()}`,
-        action: 'SOS_ALERT',
-        actor: residentId,
-        details: `Emergency triggered by Unit ${unitNumber}`,
-        timestamp: Date.now(),
-        severity: 'CRITICAL'
+      id: `log_sos_${Date.now()}`,
+      action: 'SOS_ALERT',
+      actor: residentId,
+      details: `Emergency triggered by Unit ${unitNumber}`,
+      timestamp: Date.now(),
+      severity: 'CRITICAL'
     });
   },
 
@@ -508,7 +508,7 @@ export const MockService = {
   getEstateStats: (estateId: string) => {
     const estateUsers = USERS.filter(u => u.estateId === estateId);
     const estatePasses = PASSES.filter(p => estateUsers.some(u => u.id === p.hostId));
-    
+
     const totalPasses = estatePasses.length;
     const activeVisitors = estatePasses.filter(p => p.status === PassStatus.CHECKED_IN).length;
     const entriesToday = LOGS.filter(l => l.estateId === estateId && l.entryTime > Date.now() - 86400000).length;
@@ -522,7 +522,7 @@ export const MockService = {
   approveUser: (userId: string) => {
     USERS = USERS.map(u => u.id === userId ? { ...u, isApproved: true } : u);
   },
-  
+
   rejectUser: (userId: string) => {
     USERS = USERS.filter(u => u.id !== userId);
   },
@@ -545,20 +545,20 @@ export const MockService = {
 
   createEstate: (name: string, code: string, tier: SubscriptionTier) => {
     const newEstate: Estate = {
-        id: `est_${Date.now()}`,
-        name,
-        code: code.toUpperCase(),
-        subscriptionTier: tier,
-        status: 'ACTIVE'
+      id: `est_${Date.now()}`,
+      name,
+      code: code.toUpperCase(),
+      subscriptionTier: tier,
+      status: 'ACTIVE'
     };
     ESTATES = [...ESTATES, newEstate];
     SYSTEM_LOGS.unshift({
-        id: `log_est_${Date.now()}`,
-        action: 'CREATE_ESTATE',
-        actor: 'SUPER_ADMIN',
-        details: `Created estate: ${name} (${code})`,
-        timestamp: Date.now(),
-        severity: 'INFO'
+      id: `log_est_${Date.now()}`,
+      action: 'CREATE_ESTATE',
+      actor: 'SUPER_ADMIN',
+      details: `Created estate: ${name} (${code})`,
+      timestamp: Date.now(),
+      severity: 'INFO'
     });
   },
 
@@ -576,22 +576,22 @@ export const MockService = {
 
   toggleEstateStatus: (estateId: string) => {
     ESTATES = ESTATES.map(e => {
-        if (e.id === estateId) {
-            const newStatus = e.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-            SYSTEM_LOGS.unshift({
-                id: `log_stat_${Date.now()}`,
-                action: newStatus === 'SUSPENDED' ? 'SUSPEND_ESTATE' : 'ACTIVATE_ESTATE',
-                actor: 'SUPER_ADMIN',
-                details: `${newStatus} estate: ${e.name}`,
-                timestamp: Date.now(),
-                severity: 'WARN'
-            });
-            return {
-                ...e,
-                status: newStatus
-            };
-        }
-        return e;
+      if (e.id === estateId) {
+        const newStatus = e.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+        SYSTEM_LOGS.unshift({
+          id: `log_stat_${Date.now()}`,
+          action: newStatus === 'SUSPENDED' ? 'SUSPEND_ESTATE' : 'ACTIVATE_ESTATE',
+          actor: 'SUPER_ADMIN',
+          details: `${newStatus} estate: ${e.name}`,
+          timestamp: Date.now(),
+          severity: 'WARN'
+        });
+        return {
+          ...e,
+          status: newStatus
+        };
+      }
+      return e;
     });
   },
 
@@ -612,12 +612,12 @@ export const MockService = {
     const user = USERS.find(u => u.id === userId);
     USERS = USERS.filter(u => u.id !== userId);
     SYSTEM_LOGS.unshift({
-        id: `log_del_${Date.now()}`,
-        action: 'DELETE_USER',
-        actor: 'SUPER_ADMIN',
-        details: `Deleted user: ${user?.email}`,
-        timestamp: Date.now(),
-        severity: 'CRITICAL'
+      id: `log_del_${Date.now()}`,
+      action: 'DELETE_USER',
+      actor: 'SUPER_ADMIN',
+      details: `Deleted user: ${user?.email}`,
+      timestamp: Date.now(),
+      severity: 'CRITICAL'
     });
   },
 

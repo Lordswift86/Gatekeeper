@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { MockService } from '../services/mockData';
-import { User } from '../types';
+import { MockService } from './services/mockData';
+import { User } from './types';
 import { ShieldCheck, User as UserIcon, Lock } from 'lucide-react';
 
 interface Props {
@@ -32,7 +32,7 @@ export const Auth: React.FC<Props> = ({ onLogin }) => {
   };
 
   const handleQuickLogin = (email: string) => {
-      setEmail(email);
+    setEmail(email);
   };
 
   return (
@@ -45,7 +45,7 @@ export const Auth: React.FC<Props> = ({ onLogin }) => {
           <h1 className="text-2xl font-bold text-white">GateKeeper</h1>
           <p className="text-indigo-200 mt-2 text-sm">Secure Entry Management System</p>
         </div>
-        
+
         <div className="p-8">
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
@@ -64,10 +64,10 @@ export const Auth: React.FC<Props> = ({ onLogin }) => {
                 />
               </div>
             </div>
-            
+
             {error && (
               <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2">
-                 <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> {error}
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> {error}
               </div>
             )}
 

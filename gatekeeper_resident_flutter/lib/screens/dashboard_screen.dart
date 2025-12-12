@@ -4,6 +4,7 @@ import 'package:gatekeeper_resident/models/user.dart';
 import 'package:gatekeeper_resident/services/mock_service.dart';
 import 'package:gatekeeper_resident/widgets/pass_card.dart';
 import 'package:gatekeeper_resident/widgets/custom_button.dart';
+import 'package:gatekeeper_resident/widgets/ad_banner.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -132,6 +133,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
             ),
+
+
+            const SizedBox(height: 24),
+
+            // Ad Banner (Inline)
+            const AdBanner(position: AdPosition.inline),
 
             const SizedBox(height: 24),
 
