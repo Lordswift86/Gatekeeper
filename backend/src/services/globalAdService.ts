@@ -9,13 +9,17 @@ export const GlobalAdService = {
     },
 
     async createAd(data: {
-        imageUrl: string
+        title: string
+        content: string
+        imageUrl?: string
         targetUrl?: string
-        startDate: Date
-        endDate: Date
+        startDate?: Date
+        endDate?: Date
     }) {
         return prisma.globalAd.create({
             data: {
+                title: data.title,
+                content: data.content,
                 imageUrl: data.imageUrl,
                 targetUrl: data.targetUrl,
                 startDate: data.startDate,
@@ -26,6 +30,8 @@ export const GlobalAdService = {
     },
 
     async updateAd(id: string, data: {
+        title?: string
+        content?: string
         imageUrl?: string
         targetUrl?: string
         startDate?: Date

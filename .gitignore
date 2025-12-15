@@ -26,3 +26,5 @@ dist-ssr
 # Flutter SDK
 **/flutter_sdk/
 **/build/
+**/.dart_tool/
+**/.flutter-plugins-dependencies
