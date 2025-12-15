@@ -89,6 +89,11 @@ export const api = {
         return data;
     },
 
+    async updateEstate(id: string, updates: Partial<Estate>): Promise<Estate> {
+        const { data } = await axiosInstance.put(`/estates/${id}`, updates);
+        return data;
+    },
+
     async getEstateStats(estateId?: string): Promise<any> {
         const { data } = await axiosInstance.get('/estates/stats');
         return data;
@@ -113,6 +118,15 @@ export const api = {
 
     async approveUser(userId: string): Promise<void> {
         await axiosInstance.post(`/users/${userId}/approve`);
+    },
+
+    async getAllResidents(): Promise<User[]> {
+        const { data } = await axiosInstance.get('/users/residents');
+        return data;
+    },
+
+    async deleteUser(userId: string): Promise<void> {
+        await axiosInstance.delete(`/users/${userId}`);
     },
 
     // ============= Guest Passes =============

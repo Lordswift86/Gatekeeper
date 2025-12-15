@@ -32,3 +32,34 @@ export const payBill = async (req: AuthRequest, res: Response) => {
         res.status(400).json({ message: e.message })
     }
 }
+
+export const verifyPayment = async (req: AuthRequest, res: Response) => {
+    const { reference } = req.body
+    const billId = req.params.id
+
+    if (!reference) {
+        return res.status(400).json({ message: 'Payment reference required' })
+    }
+
+    try {
+        // Verify payment with Paystack API
+        const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY
+        if (paystackSecretKey && paystackSecretKey !== 'sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx') {
+            // Real verification
+            const verifyResponse = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+                headers: { 'Authorization': `Bearer ${paystackSecretKey}` }
+            })
+            const data = await verifyResponse.json()
+
+            if (!data.status || data.data?.status !== 'success') {
+                return res.status(400).json({ message: 'Payment verification failed' })
+            }
+        }
+
+        // Mark bill as paid
+        const bill = await BillService.payBill(billId)
+        res.json(bill)
+    } catch (e: any) {
+        res.status(400).json({ message: e.message })
+    }
+}

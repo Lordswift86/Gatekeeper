@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:async';
-import '../models/data_models.dart';
-import '../services/security_service.dart';
+import '../services/api_client.dart';
 import 'views/scanner_view.dart';
 import 'views/deliveries_view.dart';
 import 'views/intercom_view.dart';
@@ -18,8 +17,9 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
   bool _isOffline = false;
-  List<EmergencyAlert> _activeAlerts = [];
+  List<Map<String, dynamic>> _activeAlerts = [];
   Timer? _alertTimer;
+  Map<String, dynamic>? _user;
 
   final List<Widget> _views = [
     const ScannerView(),
@@ -35,34 +35,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _user = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+  }
+
+  @override
   void dispose() {
     _alertTimer?.cancel();
     super.dispose();
   }
 
   void _startAlertPolling() {
-    _alertTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (_isOffline) return;
-      // Hardcoded estateId for demo
-      final alerts = SecurityService().getActiveAlerts('est_1');
-      if (mounted) {
-        setState(() => _activeAlerts = alerts);
+    _alertTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+      if (_isOffline || !mounted) return;
+      
+      try {
+        final alerts = await ApiClient.getActiveAlerts();
+        if (mounted) {
+          setState(() => _activeAlerts = List<Map<String, dynamic>>.from(alerts));
+        }
+      } catch (e) {
+        // Silent fail for polling
       }
     });
   }
 
-  void _resolveAlert(String id) {
-    SecurityService().resolveAlert(id);
-    setState(() {
-      _activeAlerts.removeWhere((a) => a.id == id);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Alert Resolved")));
+  Future<void> _resolveAlert(String id) async {
+    try {
+      await ApiClient.resolveAlert(id);
+      setState(() {
+        _activeAlerts.removeWhere((a) => a['id'] == id);
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Alert Resolved"))
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"))
+        );
+      }
+    }
+  }
+
+  Future<void> _logout() async {
+    await ApiClient.logout();
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/login');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = ModalRoute.of(context)?.settings.arguments as User?;
-    if (user == null) return const Scaffold(body: Center(child: Text("Error: No User")));
+    final userName = _user?['name'] ?? 'Security';
 
     return Scaffold(
       appBar: AppBar(
@@ -70,7 +98,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text("GateKeeper", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            Text(user.name, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 12)),
+            Text(userName, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 12)),
           ],
         ),
         actions: [
@@ -100,7 +128,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           IconButton(
             icon: const Icon(LucideIcons.logOut),
-            onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+            onPressed: _logout,
           ),
         ],
       ),
@@ -124,12 +152,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text("SOS ALERT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              Text("Unit ${alert.unitNumber} requested help!", style: const TextStyle(color: Colors.white)),
+                              Text("Unit ${alert['unitNumber']} requested help!", style: const TextStyle(color: Colors.white)),
                             ],
                           ),
                         ),
                         ElevatedButton(
-                          onPressed: () => _resolveAlert(alert.id),
+                          onPressed: () => _resolveAlert(alert['id']),
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.red),
                           child: const Text("RESOLVE"),
                         )

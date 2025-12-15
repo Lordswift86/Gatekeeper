@@ -46,8 +46,8 @@ export const Layout: React.FC<LayoutProps> = ({ user, estate, children, onLogout
     <button
       onClick={() => { onViewChange(view); setMobileMenuOpen(false); }}
       className={`flex items-center gap-3 px-4 py-3 rounded-lg w-full transition-colors ${currentView === view
-          ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-medium'
-          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+        ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-medium'
+        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
         }`}
     >
       <Icon size={20} />
@@ -144,6 +144,7 @@ export const Layout: React.FC<LayoutProps> = ({ user, estate, children, onLogout
                 <NavItem view="approvals" icon={UserIcon} label="Approvals" />
                 <NavItem view="announcements" icon={Megaphone} label="Announcements" />
                 <NavItem view="billing" icon={CreditCard} label="Billing" />
+                <NavItem view="settings" icon={Settings} label="Settings" />
               </>
             )}
             {user.role === UserRole.SUPER_ADMIN && (

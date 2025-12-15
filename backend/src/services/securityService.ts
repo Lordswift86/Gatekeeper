@@ -37,5 +37,19 @@ export const SecurityService = {
                 content: data.content
             }
         })
+    },
+
+    async triggerSOS(estateId: string, userId: string, location?: string) {
+        // High priority log
+        return prisma.logEntry.create({
+            data: {
+                estateId,
+                type: 'EMERGENCY',
+                guestName: 'SOS ALERT',
+                destination: location || 'Unknown Location',
+                notes: `Emergency triggered by resident ${userId}`,
+                entryTime: new Date()
+            }
+        })
     }
 }

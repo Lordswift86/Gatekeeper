@@ -3,23 +3,35 @@ import prisma from '../config/db'
 export const GlobalAdService = {
     async getAllAds() {
         return prisma.globalAd.findMany({
+            where: { isActive: true },
             orderBy: { createdAt: 'desc' }
         })
     },
 
-    async createAd(data: { title: string, content: string, imageUrl?: string }) {
+    async createAd(data: {
+        imageUrl: string
+        targetUrl?: string
+        startDate: Date
+        endDate: Date
+    }) {
         return prisma.globalAd.create({
             data: {
-                title: data.title,
-                content: data.content,
                 imageUrl: data.imageUrl,
-                isActive: true,
-                impressions: 0
+                targetUrl: data.targetUrl,
+                startDate: data.startDate,
+                endDate: data.endDate,
+                isActive: true
             }
         })
     },
 
-    async updateAd(id: string, data: { title?: string, content?: string, imageUrl?: string, isActive?: boolean }) {
+    async updateAd(id: string, data: {
+        imageUrl?: string
+        targetUrl?: string
+        startDate?: Date
+        endDate?: Date
+        isActive?: boolean
+    }) {
         return prisma.globalAd.update({
             where: { id },
             data
@@ -37,6 +49,17 @@ export const GlobalAdService = {
             where: { id },
             data: {
                 impressions: {
+                    increment: 1
+                }
+            }
+        })
+    },
+
+    async incrementClicks(id: string) {
+        return prisma.globalAd.update({
+            where: { id },
+            data: {
+                clicks: {
                     increment: 1
                 }
             }

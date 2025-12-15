@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/security_service.dart';
-import '../../models/data_models.dart';
+import '../../services/api_client.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -12,7 +11,8 @@ class LogbookView extends StatefulWidget {
 }
 
 class _LogbookViewState extends State<LogbookView> {
-  List<LogEntry> _logs = [];
+  List<Map<String, dynamic>> _logs = [];
+  bool _isLoading = false;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _destController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
@@ -23,23 +23,51 @@ class _LogbookViewState extends State<LogbookView> {
     _refreshLogs();
   }
 
-  void _refreshLogs() {
-    setState(() {
-      _logs = SecurityService().getEstateLogs('est_1');
-    });
+  Future<void> _refreshLogs() async {
+    setState(() => _isLoading = true);
+    try {
+      final logs = await ApiClient.getLogs();
+      setState(() => _logs = List<Map<String, dynamic>>.from(logs));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error loading logs: $e"))
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
-  void _addManualEntry() {
+  Future<void> _addManualEntry() async {
     if (_nameController.text.isEmpty || _destController.text.isEmpty) return;
 
-    SecurityService().addManualLogEntry('est_1', _nameController.text, _destController.text, _notesController.text);
-    
-    _nameController.clear();
-    _destController.clear();
-    _notesController.clear();
-    
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Manual Entry Logged")));
-    _refreshLogs();
+    try {
+      await ApiClient.addManualLog(
+        guestName: _nameController.text,
+        destination: _destController.text,
+        notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+      );
+      
+      _nameController.clear();
+      _destController.clear();
+      _notesController.clear();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Manual Entry Logged"))
+        );
+      }
+      _refreshLogs();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"))
+        );
+      }
+    }
   }
 
   void _showEntryDialog() {
@@ -96,29 +124,53 @@ class _LogbookViewState extends State<LogbookView> {
                  const SizedBox(width: 8),
                  Text("Recent Activity", style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.grey)),
                  const Spacer(),
-                 IconButton(icon: const Icon(LucideIcons.refreshCw, size: 16), onPressed: _refreshLogs)
+                 if (_isLoading)
+                   const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                 else
+                   IconButton(icon: const Icon(LucideIcons.refreshCw, size: 16), onPressed: _refreshLogs)
                ],
              ),
            ),
            Expanded(
-             child: ListView.separated(
-               itemCount: _logs.length,
-               separatorBuilder: (_, __) => const Divider(height: 1),
-               itemBuilder: (context, index) {
-                 final log = _logs[index];
-                 final date = DateTime.fromMillisecondsSinceEpoch(log.entryTime);
-                 
-                 return ListTile(
-                   leading: CircleAvatar(
-                      backgroundColor: log.type == 'DIGITAL' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
-                      child: Icon(log.type == 'DIGITAL' ? LucideIcons.qrCode : LucideIcons.pencil, size: 16, color: log.type == 'DIGITAL' ? Colors.green : Colors.orange),
+             child: _logs.isEmpty
+               ? Center(
+                   child: Column(
+                     mainAxisSize: MainAxisSize.min,
+                     children: [
+                       Icon(LucideIcons.bookOpen, size: 48, color: Colors.grey.shade300),
+                       const SizedBox(height: 8),
+                       Text("No log entries yet", style: TextStyle(color: Colors.grey.shade500)),
+                     ],
                    ),
-                   title: Text(log.guestName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                   subtitle: Text("To: ${log.destination} • ${log.notes ?? ''}"),
-                   trailing: Text(DateFormat.jm().format(date), style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                 );
-               },
-             ),
+                 )
+               : ListView.separated(
+                   itemCount: _logs.length,
+                   separatorBuilder: (_, __) => const Divider(height: 1),
+                   itemBuilder: (context, index) {
+                     final log = _logs[index];
+                     final entryTime = log['entryTime'];
+                     DateTime date;
+                     if (entryTime is int) {
+                       date = DateTime.fromMillisecondsSinceEpoch(entryTime);
+                     } else if (entryTime is String) {
+                       date = DateTime.parse(entryTime);
+                     } else {
+                       date = DateTime.now();
+                     }
+                     
+                     final logType = log['type'] ?? 'MANUAL';
+                     
+                     return ListTile(
+                       leading: CircleAvatar(
+                          backgroundColor: logType == 'DIGITAL' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                          child: Icon(logType == 'DIGITAL' ? LucideIcons.qrCode : LucideIcons.pencil, size: 16, color: logType == 'DIGITAL' ? Colors.green : Colors.orange),
+                       ),
+                       title: Text(log['guestName'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.bold)),
+                       subtitle: Text("To: ${log['destination'] ?? 'N/A'} • ${log['notes'] ?? ''}"),
+                       trailing: Text(DateFormat.jm().format(date), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                     );
+                   },
+                 ),
            ),
         ],
       ),

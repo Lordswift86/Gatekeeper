@@ -13,8 +13,12 @@ model Estate {
   id               String    @id @default(uuid())
   name             String
   code             String    @unique
+  address          String?
+  description      String?
   subscriptionTier String    @default("FREE") // 'FREE' | 'PREMIUM'
   status           String    @default("ACTIVE") // 'ACTIVE' | 'SUSPENDED'
+  securityPhone    String?   // Contact number for gate/security
+
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -27,15 +31,22 @@ model Estate {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  password    String
-  name        String
-  role        String // 'SUPER_ADMIN' | 'ESTATE_ADMIN' | 'RESIDENT' | 'SECURITY'
-  estateId    String?
-  unitNumber  String?
-  isApproved  Boolean  @default(false)
+  id            String   @id @default(uuid())
+  phone         String?  @unique // Primary login identifier - optional during migration
+  phoneVerified Boolean  @default(false)
+  email         String?  @unique // Optional, for notifications
+  password      String
+  name          String
+  role          String // 'SUPER_ADMIN' | 'ESTATE_ADMIN' | 'RESIDENT' | 'SECURITY'
+  estateId      String?
+  unitNumber    String?
+  photoUrl      String?   // URL to profile photo
+  isApproved    Boolean  @default(false)
   
+  primaryUserId String?   // Null = Primary, Set = Sub-Account
+  primaryUser   User?     @relation("Household", fields: [primaryUserId], references: [id])
+  subAccounts   User[]    @relation("Household")
+
   estate      Estate?  @relation(fields: [estateId], references: [id])
   
   guestPasses GuestPass[]
@@ -159,13 +170,27 @@ model EmergencyAlert {
 }
 
 model GlobalAd {
-  id          String   @id @default(uuid())
-  title       String
-  content     String
-  imageUrl    String?
-  impressions Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  id          String    @id @default(uuid())
+  imageUrl    String?   // Optional for backward compatibility
+  targetUrl   String?
+  isActive    Boolean   @default(true)
+  startDate   DateTime?
+  endDate     DateTime?
+  impressions Int       @default(0)
+  clicks      Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+}
+
+model OtpVerification {
+  id        String   @id @default(uuid())
+  phone     String
+  code      String
+  purpose   String   // 'registration' | 'password_reset' | 'login'
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 model SystemLog {

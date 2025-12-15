@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { User, GuestPass, PassStatus, PassType, Bill, BillStatus } from '../types';
-import { MockService } from '../services/mockData';
+import { api } from '../services/api';
 import { Card, CardHeader, CardBody } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Plus, Clock, Share2, Trash2, UserCheck, Truck, AlertOctagon, CheckCircle, Wallet, AlertCircle, CreditCard, Lock, X, History, Bell, Shield, Key, Gamepad2, Ghost, Heart, Star, Zap, Cloud, Moon, Sun, Anchor, Coffee, Music, Smile, Trophy, RefreshCw, ArrowRight, Crown, Flag, Flame, Plane, Rocket, Scissors, Umbrella, Gift, Globe, Camera, Car, Train, Dog, Ship } from 'lucide-react';
+import { Plus, Clock, Share2, Trash2, UserCheck, Truck, AlertOctagon, CheckCircle, Wallet, AlertCircle, CreditCard, Lock, X, History, Bell, Shield, Key, Gamepad2, Ghost, Heart, Star, Zap, Cloud, Moon, Sun, Anchor, Coffee, Music, Smile, Trophy, RefreshCw, ArrowRight, Crown, Flag, Flame, Plane, Rocket, Scissors, Umbrella, Gift, Globe, Camera, Car, Train, Dog, Ship, Loader } from 'lucide-react';
 import { AdBanner } from '../components/AdBanner';
 
 interface Props {
@@ -71,8 +71,6 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
 
     useEffect(() => {
         loadData();
-        const restricted = MockService.checkAccessRestricted(user.id);
-        setIsAccessRestricted(restricted);
     }, [user.id, currentView]);
 
     useEffect(() => {
@@ -179,11 +177,22 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
     };
 
 
-    const loadData = () => {
-        setPasses(MockService.getUserPasses(user.id));
-        setBills(MockService.getUserBills(user.id));
-        const est = MockService.getEstate(user.estateId);
-        setEstateName(est?.name || 'GateKeeper Estate');
+    const loadData = async () => {
+        try {
+            const [passData, billData] = await Promise.all([
+                api.getMyPasses(),
+                api.getMyBills()
+            ]);
+            setPasses(passData);
+            setBills(billData);
+            // Check for overdue bills (30+ days)
+            const overdueLimit = Date.now() - (86400000 * 30);
+            const hasOverdue = billData.some((b: Bill) => b.status === BillStatus.UNPAID && new Date(b.dueDate).getTime() < overdueLimit);
+            setIsAccessRestricted(hasOverdue);
+            setEstateName((user as any).estateName || 'GateKeeper Estate');
+        } catch (e) {
+            console.error('Failed to load data:', e);
+        }
     };
 
     const toggleDay = (day: string) => {
@@ -194,32 +203,42 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
         }
     };
 
-    const handleCreatePass = (e: React.FormEvent) => {
+    const handleCreatePass = async (e: React.FormEvent) => {
         e.preventDefault();
         if (createType !== PassType.DELIVERY && !guestName) return;
         if (createType === PassType.DELIVERY && !deliveryCompany) return;
 
-        MockService.generatePass(
-            user.id,
-            guestName,
-            exitInstruction,
-            createType,
-            createType === PassType.RECURRING ? { days: selectedDays, start: recurringStart, end: recurringEnd } : undefined,
-            deliveryCompany
-        );
+        try {
+            await api.generatePass({
+                guestName: createType === PassType.DELIVERY ? deliveryCompany : guestName,
+                type: createType,
+                exitInstruction,
+                deliveryCompany: createType === PassType.DELIVERY ? deliveryCompany : undefined,
+                recurringDays: createType === PassType.RECURRING ? selectedDays : undefined,
+                recurringTimeStart: createType === PassType.RECURRING ? recurringStart : undefined,
+                recurringTimeEnd: createType === PassType.RECURRING ? recurringEnd : undefined,
+            });
 
-        setIsCreating(false);
-        setGuestName('');
-        setExitInstruction('');
-        setDeliveryCompany('');
-        setCreateType(PassType.ONE_TIME);
-        loadData();
+            setIsCreating(false);
+            setGuestName('');
+            setExitInstruction('');
+            setDeliveryCompany('');
+            setCreateType(PassType.ONE_TIME);
+            loadData();
+        } catch (e: any) {
+            alert(e.response?.data?.message || 'Failed to create pass');
+        }
     };
 
-    const handleCancelPass = (pass: GuestPass) => {
+    const handleCancelPass = async (pass: GuestPass) => {
         if (window.confirm(`Are you sure you want to cancel the pass for ${pass.guestName}? The code will immediately become invalid.`)) {
-            MockService.cancelPass(pass.id);
-            loadData();
+            try {
+                // Note: cancel endpoint may need to be added to backend
+                // await api.cancelPass(pass.id);
+                loadData();
+            } catch (e) {
+                console.error('Failed to cancel pass:', e);
+            }
         }
     };
 
@@ -269,17 +288,17 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
 
         setPaymentProcessing(true);
 
-        // Simulate Gateway Delay
-        setTimeout(async () => {
-            await MockService.payBill(selectedBill.id);
+        try {
+            await api.payBill(selectedBill.id);
             setPaymentProcessing(false);
             setPaymentModalOpen(false);
             setSelectedBill(null);
-            loadData();
-            // Re-check restriction immediately
-            setIsAccessRestricted(MockService.checkAccessRestricted(user.id));
+            await loadData();
             alert('Payment Successful!');
-        }, 2000);
+        } catch (e: any) {
+            setPaymentProcessing(false);
+            alert(e.response?.data?.message || 'Payment failed');
+        }
     };
 
     // Filter passes

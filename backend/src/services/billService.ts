@@ -1,9 +1,28 @@
+import { PrismaClient } from '@prisma/client'
 import prisma from '../config/db'
 
 export const BillService = {
     async getMyBills(userId: string) {
+        // Find if user is primary or sub
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { subAccounts: true }
+        });
+
+        if (!user) return [];
+
+        const householdIds = [user.id];
+
+        if (user.primaryUserId) {
+            // I am a sub-account, also fetch bills for my primary
+            householdIds.push(user.primaryUserId);
+        } else {
+            // I am primary, fetch bills for all my sub-accounts
+            user.subAccounts.forEach((sub: any) => householdIds.push(sub.id));
+        }
+
         return prisma.bill.findMany({
-            where: { userId },
+            where: { userId: { in: householdIds } },
             orderBy: { dueDate: 'asc' }
         })
     },

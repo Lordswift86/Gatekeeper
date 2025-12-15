@@ -5,7 +5,9 @@ import 'package:gatekeeper_resident/services/api_client.dart';
 import 'package:gatekeeper_resident/widgets/pass_card.dart';
 import 'package:gatekeeper_resident/widgets/custom_button.dart';
 import 'package:gatekeeper_resident/widgets/ad_banner.dart';
+import 'package:gatekeeper_resident/screens/resident_id_screen.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -30,13 +32,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _isLoading = true);
     
     try {
-      final user = await ApiClient.getUserProfile();
+      final user = await ApiClient.getProfile();
       final passes = await ApiClient.getUserPasses();
       
       setState(() {
         _user = user;
         _activePasses = passes
-            .where((p) => p.status == PassStatus.active || p.status == PassStatus.checkedIn)
+            .where((p) => p.status == PassStatus.ACTIVE || p.status == PassStatus.CHECKED_IN)
             .toList();
         // TODO: Check access restriction based on overdue bills
         _isAccessRestricted = false;
@@ -98,6 +100,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: const Text('Dashboard'),
         actions: [
           IconButton(
+            icon: const Icon(LucideIcons.badgeCheck),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ResidentIdScreen()),
+              );
+            },
+            tooltip: 'My Resident ID',
+          ),
+          IconButton(
             icon: const Icon(LucideIcons.bell),
             onPressed: () {},
           ),
@@ -152,12 +164,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                    TextButton.icon(
-                     onPressed: () {},
+                     onPressed: () async {
+                       if (_user?.estate?.securityPhone != null) {
+                         final Uri launchUri = Uri(
+                           scheme: 'tel',
+                           path: _user!.estate!.securityPhone!,
+                         );
+                         if (await canLaunchUrl(launchUri)) {
+                           await launchUrl(launchUri);
+                         } else {
+                           if (!mounted) return;
+                           ScaffoldMessenger.of(context).showSnackBar(
+                             const SnackBar(content: Text('Could not launch dialer')),
+                           );
+                         }
+                       } else {
+                         ScaffoldMessenger.of(context).showSnackBar(
+                           const SnackBar(content: Text('No security number configured for this estate.')),
+                         );
+                       }
+                     },
                      icon: const Icon(LucideIcons.phone, color: Colors.green),
                      label: const Text('Call Security', style: TextStyle(fontWeight: FontWeight.bold)),
                    ),
                    ElevatedButton.icon(
-                     onPressed: () {},
+                     onPressed: () async {
+                       final confirm = await showDialog<bool>(
+                         context: context,
+                         builder: (context) => AlertDialog(
+                           title: const Text('EMERGENCY SOS'),
+                           content: const Text('This will trigger an immediate emergency alert to security. Are you sure?'),
+                           actions: [
+                             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                             ElevatedButton(
+                               style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                               onPressed: () => Navigator.pop(context, true), 
+                               child: const Text('TRIGGER SOS')
+                             ),
+                           ],
+                         ),
+                       );
+
+                       if (confirm == true) {
+                         try {
+                           await ApiClient.triggerSOS();
+                           if (!mounted) return;
+                           showDialog(
+                             context: context,
+                             builder: (context) => const AlertDialog(
+                               title: Text('SOS SENT'),
+                               content: Text('Security has been alerted and will arrive shortly.'),
+                               icon: Icon(LucideIcons.siren, size: 48, color: Colors.red),
+                             ),
+                           );
+                         } catch (e) {
+                           if (!mounted) return;
+                           ScaffoldMessenger.of(context).showSnackBar(
+                             SnackBar(content: Text('Failed to send SOS: $e')),
+                           );
+                         }
+                       }
+                     },
                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
                      icon: const Icon(LucideIcons.siren, size: 18),
                      label: const Text('SOS'),
@@ -183,7 +250,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: LucideIcons.plus,
                     label: 'New Guest',
                     color: Colors.indigo,
-                    onTap: () => _createPass(PassType.oneTime),
+                    onTap: () => _createPass(PassType.ONE_TIME),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -192,7 +259,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: LucideIcons.truck,
                     label: 'Delivery',
                     color: Colors.orange,
-                    onTap: () => _createPass(PassType.delivery),
+                    onTap: () => _createPass(PassType.DELIVERY),
                   ),
                 ),
               ],
@@ -212,8 +279,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ..._activePasses.map((pass) => PassCard(
                 pass: pass,
                 onCancel: () async {
-                  // TODO: Implement cancel pass API
-                  await _loadData();
+                  try {
+                    await ApiClient.cancelPass(pass.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Pass cancelled')),
+                    );
+                    _loadData();
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to cancel pass: $e')),
+                    );
+                  }
                 },
               )),
           ],
@@ -283,7 +359,7 @@ class _CreatePassDialogState extends State<CreatePassDialog> {
     setState(() => _isLoading = true);
 
     try {
-      final isDelivery = widget.type == PassType.delivery;
+      final isDelivery = widget.type == PassType.DELIVERY;
       
       await ApiClient.generatePass(
         guestName: isDelivery ? 'Delivery' : _nameController.text,
@@ -306,7 +382,7 @@ class _CreatePassDialogState extends State<CreatePassDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDelivery = widget.type == PassType.delivery;
+    final isDelivery = widget.type == PassType.DELIVERY;
     
     return AlertDialog(
       title: Text(isDelivery ? 'Expected Delivery' : 'New Guest'),

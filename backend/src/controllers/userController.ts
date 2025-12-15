@@ -61,3 +61,26 @@ export const getAllResidents = async (req: Request, res: Response) => {
         res.status(500).json({ message: error.message })
     }
 }
+
+export const createSecurityAccount = async (req: Request, res: Response) => {
+    try {
+        const estateId = (req as any).user.estateId
+        if (!estateId) throw new Error('No estate associated with admin')
+
+        const { name, email, password } = req.body
+        if (!name || !email || !password) {
+            return res.status(400).json({ message: 'Name, email, and password are required' })
+        }
+
+        const user = await UserService.createSecurityAccount({
+            name,
+            email,
+            password,
+            estateId
+        })
+
+        res.status(201).json({ user, message: 'Security account created successfully' })
+    } catch (error: any) {
+        res.status(400).json({ message: error.message })
+    }
+}

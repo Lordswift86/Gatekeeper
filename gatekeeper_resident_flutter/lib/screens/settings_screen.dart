@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:gatekeeper_resident/main.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-
+import 'package:gatekeeper_resident/providers/user_provider.dart';
+import 'package:gatekeeper_resident/screens/household_screen.dart';
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -51,9 +52,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value: _privacy,
                   onChanged: (val) => setState(() => _privacy = val),
                 ),
+
               ],
             ),
           ),
+
+          if (Provider.of<UserProvider>(context, listen: false).user?.primaryUserId == null) ...[
+            const SizedBox(height: 24),
+            _SectionHeader(title: 'Household'),
+            Card(
+              child: ListTile(
+                leading: const Icon(LucideIcons.users),
+                title: const Text('Manage Household'),
+                subtitle: const Text('Add family members & sub-accounts.'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const HouseholdScreen()));
+                },
+              ),
+            ),
+          ],
 
           const SizedBox(height: 24),
           _SectionHeader(title: 'Security'),

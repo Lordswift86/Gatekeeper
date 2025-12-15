@@ -81,5 +81,17 @@ export const PassService = {
                 exitTime: new Date()
             }
         })
+    },
+
+    async cancelPass(passId: string, userId: string) {
+        const pass = await prisma.guestPass.findUnique({ where: { id: passId } })
+        if (!pass) throw new Error('Pass not found')
+
+        if (pass.hostId !== userId) throw new Error('Unauthorized to cancel this pass')
+
+        return prisma.guestPass.update({
+            where: { id: passId },
+            data: { status: 'CANCELLED' }
+        })
     }
 }

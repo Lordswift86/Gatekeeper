@@ -1,3 +1,5 @@
+import 'estate.dart';
+
 enum UserRole {
   SUPER_ADMIN,
   ESTATE_ADMIN,
@@ -12,7 +14,10 @@ class User {
   final UserRole role;
   final String estateId;
   final String? unitNumber;
+  final String? photoUrl;
+  final String? primaryUserId;
   final bool isApproved;
+  final Estate? estate;
 
   User({
     required this.id,
@@ -21,7 +26,10 @@ class User {
     required this.role,
     required this.estateId,
     this.unitNumber,
+    this.photoUrl,
+    this.primaryUserId,
     required this.isApproved,
+    this.estate,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -32,7 +40,10 @@ class User {
       role: _parseUserRole(json['role'] as String),
       estateId: json['estateId'] as String,
       unitNumber: json['unitNumber'] as String?,
+      photoUrl: json['photoUrl'] as String?,
+      primaryUserId: json['primaryUserId'] as String?,
       isApproved: json['isApproved'] as bool,
+      estate: json['estate'] != null ? Estate.fromJson(json['estate']) : null,
     );
   }
 
@@ -44,7 +55,10 @@ class User {
       'role': role.name,
       'estateId': estateId,
       'unitNumber': unitNumber,
+      'photoUrl': photoUrl,
+      'primaryUserId': primaryUserId,
       'isApproved': isApproved,
+      'estate': estate?.toJson(),
     };
   }
 

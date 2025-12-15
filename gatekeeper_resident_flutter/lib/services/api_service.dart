@@ -1,10 +1,23 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_config.dart';
+import 'offline_cache.dart';
 
+/// Enhanced API service with offline support
 class ApiService {
   static const String _tokenKey = 'auth_token';
+  static bool _isOfflineMode = false;
+  
+  /// Check if currently in offline mode
+  static bool get isOfflineMode => _isOfflineMode;
+  
+  /// Enable/disable offline mode
+  static void setOfflineMode(bool enabled) {
+    _isOfflineMode = enabled;
+    debugPrint('Offline mode: ${enabled ? 'ENABLED' : 'DISABLED'}');
+  }
   
   // Token management
   static Future<String?> getToken() async {
@@ -38,8 +51,19 @@ class ApiService {
     return headers;
   }
   
-  // HTTP GET
-  static Future<dynamic> get(String endpoint, {bool requiresAuth = true}) async {
+  // HTTP GET with offline support
+  static Future<dynamic> get(String endpoint, {
+    bool requiresAuth = true,
+    String? cacheKey,
+    Duration? cacheExpiry,
+  }) async {
+    // If offline mode, return cached data only
+    if (_isOfflineMode && cacheKey != null) {
+      final cached = await OfflineCache.get(cacheKey);
+      if (cached != null) return cached;
+      throw Exception('No offline data available');
+    }
+    
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
       final headers = await getHeaders(includeAuth: requiresAuth);
@@ -47,14 +71,33 @@ class ApiService {
       final response = await http.get(url, headers: headers)
           .timeout(ApiConfig.timeoutDuration);
       
-      return _handleResponse(response);
+      final result = _handleResponse(response);
+      
+      // Cache successful responses
+      if (cacheKey != null && result != null) {
+        await OfflineCache.save(cacheKey, result, expiry: cacheExpiry);
+      }
+      
+      return result;
     } catch (e) {
+      // Fallback to cache on network error
+      if (cacheKey != null) {
+        final cached = await OfflineCache.get(cacheKey);
+        if (cached != null) {
+          debugPrint('Using cached data for $endpoint');
+          return cached;
+        }
+      }
       throw _handleError(e);
     }
   }
   
   // HTTP POST
   static Future<dynamic> post(String endpoint, dynamic body, {bool requiresAuth = true}) async {
+    if (_isOfflineMode) {
+      throw Exception('Cannot perform this action while offline');
+    }
+    
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
       final headers = await getHeaders(includeAuth: requiresAuth);
@@ -73,6 +116,10 @@ class ApiService {
   
   // HTTP PUT
   static Future<dynamic> put(String endpoint, dynamic body, {bool requiresAuth = true}) async {
+    if (_isOfflineMode) {
+      throw Exception('Cannot perform this action while offline');
+    }
+    
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
       final headers = await getHeaders(includeAuth: requiresAuth);
@@ -81,6 +128,27 @@ class ApiService {
         url,
         headers: headers,
         body: jsonEncode(body),
+      ).timeout(ApiConfig.timeoutDuration);
+      
+      return _handleResponse(response);
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+  
+  // HTTP DELETE
+  static Future<dynamic> delete(String endpoint, {bool requiresAuth = true}) async {
+    if (_isOfflineMode) {
+      throw Exception('Cannot perform this action while offline');
+    }
+    
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+      final headers = await getHeaders(includeAuth: requiresAuth);
+      
+      final response = await http.delete(
+        url,
+        headers: headers,
       ).timeout(ApiConfig.timeoutDuration);
       
       return _handleResponse(response);
@@ -108,7 +176,12 @@ class ApiService {
   // Handle errors
   static String _handleError(dynamic error) {
     if (error is Exception) {
-      return error.toString().replaceAll('Exception: ', '');
+      final msg = error.toString().replaceAll('Exception: ', '');
+      // Check for network errors
+      if (msg.contains('SocketException') || msg.contains('TimeoutException')) {
+        return 'No internet connection';
+      }
+      return msg;
     }
     return 'An unexpected error occurred';
   }

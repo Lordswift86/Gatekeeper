@@ -49,25 +49,58 @@ class _ResidentsScreenState extends State<ResidentsScreen> {
     }
   }
 
+  Future<void> _rejectResident(String userId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reject Resident'),
+        content: const Text('Are you sure you want to reject this resident request?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Reject', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await EstateAdminApiClient.rejectResident(userId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Resident rejected/removed')),
+      );
+      _loadData(); // Switch tabs or refresh? Pending list will just update.
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TabBar(
-          onTap: (index) => setState(() => _selectedTab = index),
-          tabs: [
-            Tab(text: 'Pending (${_pendingResidents.length})'),
-            Tab(text: 'All Residents (${_allResidents.length})'),
-          ],
-        ),
-        Expanded(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _selectedTab == 0
-                  ? _buildPendingList()
-                  : _buildAllResidentsList(),
-        ),
-      ],
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          TabBar(
+            onTap: (index) => setState(() => _selectedTab = index),
+            tabs: [
+              Tab(text: 'Pending (${_pendingResidents.length})'),
+              Tab(text: 'All Residents (${_allResidents.length})'),
+            ],
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _selectedTab == 0
+                    ? _buildPendingList()
+                    : _buildAllResidentsList(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -97,7 +130,7 @@ class _ResidentsScreenState extends State<ResidentsScreen> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed: () {},
+                  onPressed: () => _rejectResident(resident['id']),
                 ),
               ],
             ),

@@ -33,6 +33,10 @@ export enum BillType {
   POWER = 'POWER',
   WASTE = 'WASTE',
   WATER = 'WATER',
+  SECURITY_LEVY = 'SECURITY_LEVY',
+  MAINTENANCE = 'MAINTENANCE',
+  UTILITY = 'UTILITY',
+  OTHER = 'OTHER',
 }
 
 export enum CallStatus {
@@ -45,6 +49,7 @@ export interface Estate {
   id: string;
   name: string;
   code: string; // Property Code for onboarding
+  securityPhone?: string;
   subscriptionTier: SubscriptionTier;
   status: 'ACTIVE' | 'SUSPENDED';
 }
@@ -57,6 +62,7 @@ export interface User {
   estateId: string;
   unitNumber?: string;
   isApproved: boolean; // For resident onboarding
+  estate?: Estate;
 }
 
 export interface GuestPass {
@@ -76,7 +82,7 @@ export interface GuestPass {
   validUntil: number; // timestamp
   entryTime?: number;
   exitTime?: number;
-  
+
   // Delivery specific
   plateNumber?: string;
   deliveryCompany?: string;
@@ -87,7 +93,7 @@ export interface Announcement {
   estateId: string;
   title: string;
   content: string;
-  date: string;
+  createdAt: string;
 }
 
 export interface LogEntry {

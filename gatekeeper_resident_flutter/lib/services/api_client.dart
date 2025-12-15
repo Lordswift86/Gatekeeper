@@ -6,10 +6,10 @@ import '../models/bill.dart';
 class ApiClient {
   // ============= Authentication =============
   
-  static Future<Map<String, dynamic>> login(String email, String password) async {
+  static Future<Map<String, dynamic>> login(String phone, String password) async {
     final response = await ApiService.post(
       '/auth/login',
-      {'email': email, 'password': password},
+      {'phone': phone, 'password': password},
       requiresAuth: false,
     );
     
@@ -18,10 +18,27 @@ class ApiClient {
       await ApiService.setToken(response['token']);
     }
     
-    return {
-      'user': User.fromJson(response['user']),
-      'token': response['token'],
-    };
+    return response;
+  }
+  
+  // ============= OTP Management =============
+  
+  static Future<Map<String, dynamic>> sendOTP(String phone, {String purpose = 'registration'}) async {
+    final response = await ApiService.post(
+      '/auth/send-otp',
+      {'phone': phone, 'purpose': purpose},
+      requiresAuth: false,
+    );
+    return response;
+  }
+  
+  static Future<bool> verifyOTP(String phone, String code, {String purpose = 'registration'}) async {
+    final response = await ApiService.post(
+      '/auth/verify-otp',
+      {'phone': phone, 'code': code, 'purpose': purpose},
+      requiresAuth: false,
+    );
+    return response['verified'] == true;
   }
   
   static Future<void> logout() async {
@@ -84,9 +101,11 @@ class ApiClient {
   }
   
   static Future<void> cancelPass(String passId) async {
-    // Note: This would need to be implemented on the backend
-    // For now, we can use a workaround if the endpoint doesn't exist
-    throw UnimplementedError('Cancel pass endpoint not yet implemented');
+    await ApiService.delete('/passes/$passId');
+  }
+  
+  static Future<void> triggerSOS() async {
+    await ApiService.post('/security/alert', {});
   }
   
   // ============= Bills =============
@@ -100,6 +119,13 @@ class ApiClient {
   
   static Future<Bill> payBill(String billId) async {
     final response = await ApiService.post('/bills/$billId/pay', {});
+    return Bill.fromJson(response);
+  }
+  
+  static Future<Bill> verifyPayment(String billId, String reference) async {
+    final response = await ApiService.post('/bills/$billId/verify-payment', {
+      'reference': reference,
+    });
     return Bill.fromJson(response);
   }
   
@@ -128,5 +154,30 @@ class ApiClient {
     } catch (e) {
       return false;
     }
+  }
+  // ============ Identity ============
+  
+  static Future<Map<String, dynamic>> getIdentityToken() async {
+    return await ApiService.get('/identity/token');
+  }
+
+  // ============ Household ============
+
+  static Future<List<User>> getHousehold() async {
+    final response = await ApiService.get('/household');
+    return (response as List).map((json) => User.fromJson(json)).toList();
+  }
+
+  static Future<User> addSubAccount(String name, String email, String password) async {
+    final response = await ApiService.post('/household', {
+      'name': name,
+      'email': email,
+      'password': password
+    });
+    return User.fromJson(response);
+  }
+
+  static Future<void> removeSubAccount(String userId) async {
+    await ApiService.delete('/household/$userId');
   }
 }

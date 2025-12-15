@@ -79,4 +79,29 @@ class ApiClient {
     });
     return response;
   }
+  
+  // ============= Emergency Alerts =============
+  
+  static Future<List<dynamic>> getActiveAlerts() async {
+    final response = await ApiService.get('/security/alerts/active');
+    return response as List? ?? [];
+  }
+  
+  static Future<void> resolveAlert(String alertId) async {
+    await ApiService.post('/security/alerts/$alertId/resolve', {});
+  }
+  
+  // ============= Deliveries =============
+  
+  static Future<List<dynamic>> getPendingDeliveries() async {
+    final response = await ApiService.get('/passes?type=DELIVERY&status=ACTIVE');
+    return response as List? ?? [];
+  }
+  
+  static Future<void> confirmDelivery(String passId) async {
+    await ApiService.post('/passes/$passId/entry', {});
+  }
+  static Future<Map<String, dynamic>> verifyIdentity(String token) async {
+    return await ApiService.post('/identity/verify', {'token': token});
+  }
 }

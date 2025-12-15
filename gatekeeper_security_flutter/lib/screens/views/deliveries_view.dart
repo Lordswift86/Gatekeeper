@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../services/security_service.dart';
-import '../../models/data_models.dart';
+import '../../services/api_client.dart';
 
 class DeliveriesView extends StatefulWidget {
   const DeliveriesView({super.key});
@@ -11,7 +10,7 @@ class DeliveriesView extends StatefulWidget {
 }
 
 class _DeliveriesViewState extends State<DeliveriesView> {
-  List<GuestPass> _deliveries = [];
+  List<Map<String, dynamic>> _deliveries = [];
   bool _isLoading = true;
   String? _verifyingId;
   final TextEditingController _plateController = TextEditingController();
@@ -22,24 +21,44 @@ class _DeliveriesViewState extends State<DeliveriesView> {
     _loadDeliveries();
   }
 
-  void _loadDeliveries() {
+  Future<void> _loadDeliveries() async {
     setState(() => _isLoading = true);
-    // Hardcoded estateId for demo
-    final list = SecurityService().getExpectedDeliveries('est_1');
-    setState(() {
-      _deliveries = list;
-      _isLoading = false;
-    });
+    try {
+      final list = await ApiClient.getPendingDeliveries();
+      setState(() {
+        _deliveries = List<Map<String, dynamic>>.from(list);
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error loading deliveries: $e"))
+        );
+      }
+    }
   }
 
-  void _verifyDelivery(String passId) {
+  Future<void> _verifyDelivery(String passId) async {
     if (_plateController.text.isEmpty) return;
     
-    SecurityService().verifyDelivery(passId, _plateController.text);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Delivery Verified & Checked In"), backgroundColor: Colors.green));
-    
-    setState(() { _verifyingId = null; _plateController.clear(); });
-    _loadDeliveries();
+    try {
+      await ApiClient.confirmDelivery(passId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Delivery Verified & Checked In"), backgroundColor: Colors.green)
+        );
+      }
+      
+      setState(() { _verifyingId = null; _plateController.clear(); });
+      _loadDeliveries();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"))
+        );
+      }
+    }
   }
 
   @override
@@ -54,79 +73,91 @@ class _DeliveriesViewState extends State<DeliveriesView> {
             Icon(LucideIcons.truck, size: 64, color: Colors.grey.shade300),
             const SizedBox(height: 16),
             Text("No Expected Deliveries", style: TextStyle(color: Colors.grey.shade500, fontSize: 18)),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: _loadDeliveries,
+              icon: const Icon(LucideIcons.refreshCw),
+              label: const Text("Refresh"),
+            ),
           ],
         ),
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemCount: _deliveries.length,
-      itemBuilder: (context, index) {
-        final pass = _deliveries[index];
-        final isVerifying = _verifyingId == pass.id;
+    return RefreshIndicator(
+      onRefresh: _loadDeliveries,
+      child: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemCount: _deliveries.length,
+        itemBuilder: (context, index) {
+          final pass = _deliveries[index];
+          final isVerifying = _verifyingId == pass['id'];
+          final guestName = pass['guestName'] ?? 'Delivery';
+          final hostUnit = pass['hostUnit'] ?? 'N/A';
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(pass.guestName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.indigo.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                      child: Text("Unit ${pass.hostUnit}", style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12)),
-                    )
-                  ],
-                ),
-                Text("Host: ${pass.hostName}", style: TextStyle(color: Colors.grey.shade600)),
-                
-                const SizedBox(height: 16),
-                
-                if (isVerifying)
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _plateController,
-                          decoration: const InputDecoration(
-                            labelText: "Plate Number",
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 0)
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        onPressed: () => _verifyDelivery(pass.id),
-                        icon: const Icon(LucideIcons.check, color: Colors.green),
-                        style: IconButton.styleFrom(backgroundColor: Colors.green.withOpacity(0.1)),
-                      ),
-                      IconButton(
-                        onPressed: () => setState(() => _verifyingId = null),
-                        icon: const Icon(LucideIcons.x, color: Colors.red),
-                        style: IconButton.styleFrom(backgroundColor: Colors.red.withOpacity(0.1)),
+                      Text(guestName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(color: Colors.indigo.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                        child: Text("Unit $hostUnit", style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12)),
                       )
                     ],
-                  )
-                else
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () => setState(() { _verifyingId = pass.id; _plateController.clear(); }),
-                      child: const Text("Verify & Check In"),
-                    ),
-                  )
-              ],
+                  ),
+                  if (pass['deliveryCompany'] != null)
+                    Text("Company: ${pass['deliveryCompany']}", style: TextStyle(color: Colors.grey.shade600)),
+                  
+                  const SizedBox(height: 16),
+                  
+                  if (isVerifying)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _plateController,
+                            decoration: const InputDecoration(
+                              labelText: "Plate Number",
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 0)
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () => _verifyDelivery(pass['id']),
+                          icon: const Icon(LucideIcons.check, color: Colors.green),
+                          style: IconButton.styleFrom(backgroundColor: Colors.green.withOpacity(0.1)),
+                        ),
+                        IconButton(
+                          onPressed: () => setState(() => _verifyingId = null),
+                          icon: const Icon(LucideIcons.x, color: Colors.red),
+                          style: IconButton.styleFrom(backgroundColor: Colors.red.withOpacity(0.1)),
+                        )
+                      ],
+                    )
+                  else
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () => setState(() { _verifyingId = pass['id']; _plateController.clear(); }),
+                        child: const Text("Verify & Check In"),
+                      ),
+                    )
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

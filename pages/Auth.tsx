@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { MockService } from '../services/mockData';
+import { api } from '../services/api';
 import { User, UserRole } from '../types';
-import { ShieldCheck, User as UserIcon, Lock, Building2 } from 'lucide-react';
+import { ShieldCheck, User as UserIcon, Lock, Building2, AlertCircle } from 'lucide-react';
 
 interface Props {
   onLogin: (user: User) => void;
@@ -29,43 +29,48 @@ export const Auth: React.FC<Props> = ({ onLogin }) => {
 
     try {
       if (isLogin) {
-        const user = await MockService.login(email);
-        if (user) {
-          if (!user.isApproved && user.role !== UserRole.SUPER_ADMIN) {
-             setError('Account pending approval by Estate Admin.');
-          } else {
-             onLogin(user);
-          }
+        const { user } = await api.login(email, password);
+        if (!user.isApproved && user.role !== UserRole.SUPER_ADMIN) {
+          setError('Account pending approval by Estate Admin.');
         } else {
-          setError('User not found. Try demo accounts.');
+          onLogin(user);
         }
       } else {
         // Registration
-        const res = await MockService.register(name, email, role, estateCode, unitNumber);
-        if (res.success) {
-          setSuccessMsg('Registration successful! Please wait for Admin approval before logging in.');
-          setIsLogin(true); // Switch to login
-        } else {
-          setError(res.message || 'Registration failed');
-        }
+        await api.register({
+          name,
+          email,
+          password,
+          role,
+          estateCode,
+          unitNumber: role === UserRole.RESIDENT ? unitNumber : undefined,
+        });
+        setSuccessMsg('Registration successful! Please wait for Admin approval before logging in.');
+        setIsLogin(true);
+        // Clear form
+        setName('');
+        setPassword('');
+        setEstateCode('');
+        setUnitNumber('');
       }
-    } catch (err) {
-      setError('An error occurred');
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.message || 'An error occurred';
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleQuickLogin = (email: string) => {
-      setEmail(email);
-      setPassword('dummy');
-      setIsLogin(true);
+  const handleQuickLogin = (email: string, password: string = 'password123') => {
+    setEmail(email);
+    setPassword(password);
+    setIsLogin(true);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
       {/* Background Image & Overlay */}
-      <div 
+      <div
         className="absolute inset-0 z-0"
         style={{
           backgroundImage: 'url("https://images.unsplash.com/photo-1558036117-15d82a90b9b1?q=80&w=2940&auto=format&fit=crop")',
@@ -84,23 +89,23 @@ export const Auth: React.FC<Props> = ({ onLogin }) => {
           <h1 className="text-2xl font-bold text-white tracking-tight">GateKeeper</h1>
           <p className="text-indigo-100 mt-1 text-sm font-medium opacity-90">Secure Entry Management System</p>
         </div>
-        
+
         {/* Tabs */}
         <div className="flex border-b border-slate-200 dark:border-slate-800">
-            <button 
-              className={`flex-1 py-4 text-sm font-semibold transition-colors relative ${isLogin ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
-              onClick={() => { setIsLogin(true); setError(''); }}
-            >
-              Sign In
-              {isLogin && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-t-full mx-8"></div>}
-            </button>
-            <button 
-              className={`flex-1 py-4 text-sm font-semibold transition-colors relative ${!isLogin ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
-              onClick={() => { setIsLogin(false); setError(''); }}
-            >
-              Create Account
-              {!isLogin && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-t-full mx-8"></div>}
-            </button>
+          <button
+            className={`flex-1 py-4 text-sm font-semibold transition-colors relative ${isLogin ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            onClick={() => { setIsLogin(true); setError(''); }}
+          >
+            Sign In
+            {isLogin && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-t-full mx-8"></div>}
+          </button>
+          <button
+            className={`flex-1 py-4 text-sm font-semibold transition-colors relative ${!isLogin ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            onClick={() => { setIsLogin(false); setError(''); }}
+          >
+            Create Account
+            {!isLogin && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-t-full mx-8"></div>}
+          </button>
         </div>
 
         <div className="p-8 pt-6">
@@ -127,8 +132,8 @@ export const Auth: React.FC<Props> = ({ onLogin }) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wide">Role</label>
-                    <select 
-                      value={role} 
+                    <select
+                      value={role}
                       onChange={(e) => setRole(e.target.value as UserRole)}
                       className="block w-full px-4 py-3 bg-slate-800 text-white border-transparent rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-slate-700 text-sm appearance-none"
                     >
@@ -197,10 +202,10 @@ export const Auth: React.FC<Props> = ({ onLogin }) => {
                 />
               </div>
             </div>
-            
+
             {error && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-medium rounded-lg flex items-center gap-2 animate-pulse">
-                 <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> {error}
+              <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-medium rounded-lg flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" /> {error}
               </div>
             )}
 
@@ -224,13 +229,10 @@ export const Auth: React.FC<Props> = ({ onLogin }) => {
                   Estate Admin
                 </button>
                 <button onClick={() => handleQuickLogin('bob@sunset.com')} className="px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-100 dark:hover:border-indigo-800 rounded-lg border border-slate-200 dark:border-slate-700 transition-all text-center">
-                  Resident (Free)
+                  Resident
                 </button>
-                <button onClick={() => handleQuickLogin('richie@royal.com')} className="px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-100 dark:hover:border-indigo-800 rounded-lg border border-slate-200 dark:border-slate-700 transition-all text-center">
-                  Resident (Premium)
-                </button>
-                <button onClick={() => handleQuickLogin('sam@sunset.com')} className="col-span-2 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-100 dark:hover:border-indigo-800 rounded-lg border border-slate-200 dark:border-slate-700 transition-all text-center">
-                  Security Guard
+                <button onClick={() => handleQuickLogin('sam@sunset.com')} className="px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-100 dark:hover:border-indigo-800 rounded-lg border border-slate-200 dark:border-slate-700 transition-all text-center">
+                  Security
                 </button>
               </div>
             </div>

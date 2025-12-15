@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../services/security_service.dart';
-import '../models/data_models.dart';
+import '../services/api_client.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,8 +11,10 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   String _error = '';
+  bool _obscurePassword = true;
 
   Future<void> _handleLogin() async {
     setState(() {
@@ -22,30 +23,52 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     final email = _emailController.text.trim();
-    if (email.isEmpty) {
-       setState(() { _isLoading = false; _error = 'Please enter an email'; });
-       return;
+    final password = _passwordController.text;
+    
+    if (email.isEmpty || password.isEmpty) {
+      setState(() { 
+        _isLoading = false; 
+        _error = 'Please enter email and password'; 
+      });
+      return;
     }
 
-    final user = await SecurityService().login(email);
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      if (user != null) {
-        if (user.role == UserRole.SECURITY || user.role == UserRole.SUPER_ADMIN) { // Allow Super Admin for testing
-             Navigator.pushReplacementNamed(context, '/dashboard', arguments: user);
-        } else {
-             setState(() => _error = 'Access Denied: Security Personnel Only');
-        }
+    try {
+      final result = await ApiClient.login(email, password);
+      final user = result['user'];
+      
+      if (!mounted) return;
+      
+      final role = user['role'] as String?;
+      if (role == 'SECURITY' || role == 'SUPER_ADMIN') {
+        Navigator.pushReplacementNamed(context, '/dashboard', arguments: user);
       } else {
-        setState(() => _error = 'User not found');
+        setState(() {
+          _isLoading = false;
+          _error = 'Access Denied: Security Personnel Only';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = e.toString().replaceAll('Exception: ', '');
+        });
       }
     }
   }
 
-  void _quickLogin(String email) {
+  void _quickLogin(String email, String password) {
     _emailController.text = email;
+    _passwordController.text = password;
     _handleLogin();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -98,9 +121,29 @@ class _LoginScreenState extends State<LoginScreen> {
                        
                        TextField(
                          controller: _emailController,
+                         keyboardType: TextInputType.emailAddress,
                          decoration: InputDecoration(
                            labelText: "Email Address",
-                           prefixIcon: Icon(LucideIcons.user, color: Colors.blueGrey.shade400),
+                           prefixIcon: Icon(LucideIcons.mail, color: Colors.blueGrey.shade400),
+                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.blueGrey.shade200)),
+                           filled: true,
+                           fillColor: Colors.blueGrey.shade50
+                         ),
+                       ),
+                       
+                       const SizedBox(height: 16),
+                       
+                       TextField(
+                         controller: _passwordController,
+                         obscureText: _obscurePassword,
+                         decoration: InputDecoration(
+                           labelText: "Password",
+                           prefixIcon: Icon(LucideIcons.lock, color: Colors.blueGrey.shade400),
+                           suffixIcon: IconButton(
+                             icon: Icon(_obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye, color: Colors.blueGrey.shade400),
+                             onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                           ),
                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.blueGrey.shade200)),
                            filled: true,
@@ -145,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
                        _QuickLoginButton(
                          label: "Sam Security", 
                          subtitle: "Security Guard",
-                         onTap: () => _quickLogin('sam@sunset.com')
+                         onTap: () => _quickLogin('sam@sunset.com', 'password123')
                        ),
                      ],
                    ),

@@ -50,3 +50,12 @@ export const exitPass = async (req: Request, res: Response) => {
         res.status(400).json({ message: e.message })
     }
 }
+
+export const cancelPass = async (req: AuthRequest, res: Response) => {
+    try {
+        const pass = await PassService.cancelPass(req.params.id, req.user!.userId)
+        res.json(pass)
+    } catch (e: any) {
+        res.status(400).json({ message: e.message })
+    }
+}

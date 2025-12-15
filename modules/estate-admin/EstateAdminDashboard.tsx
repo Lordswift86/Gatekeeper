@@ -4,7 +4,7 @@ import api from '../../services/api';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { Users, Shield, Calendar, Check, X, Megaphone, Plus, CreditCard, DollarSign, Wallet, AlertCircle, FileText, UploadCloud } from 'lucide-react';
+import { Users, Shield, Calendar, Check, X, Megaphone, Plus, CreditCard, DollarSign, Wallet, AlertCircle, FileText, UploadCloud, Phone } from 'lucide-react';
 
 interface Props {
   user: User;
@@ -121,7 +121,7 @@ export const EstateAdminDashboard: React.FC<Props> = ({ user, currentView = 'ove
     { day: 'Mon', entries: 120, exits: 115 },
     { day: 'Tue', entries: 140, exits: 138 },
     { day: 'Wed', entries: 160, exits: 155 },
-    { day: 'Thu', entries: 145, entries: 142 },
+    { day: 'Thu', entries: 145, exits: 142 },
     { day: 'Fri', entries: 175, exits: 170 },
     { day: 'Sat', entries: 95, exits: 90 },
     { day: 'Sun', entries: 85, exits: 82 },
@@ -343,6 +343,72 @@ export const EstateAdminDashboard: React.FC<Props> = ({ user, currentView = 'ove
     );
   }
 
+  if (currentView === 'settings') {
+    const [securityPhone, setSecurityPhone] = useState(user.estate?.securityPhone || '');
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSaveSettings = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsSaving(true);
+      try {
+        if (user.estateId) {
+          await api.updateEstate(user.estateId, { securityPhone });
+          // Ideally refresh user profile or notify success
+          alert('Settings saved successfully');
+        }
+      } catch (error) {
+        console.error('Failed to update settings:', error);
+        alert('Failed to save settings');
+      } finally {
+        setIsSaving(false);
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Estate Settings</h2>
+          <p className="text-slate-500 dark:text-slate-400">Manage estate configuration</p>
+        </div>
+
+        <Card>
+          <CardHeader title="General Configuration" />
+          <CardBody>
+            <form onSubmit={handleSaveSettings} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Security Contact Number
+                </label>
+                <p className="text-xs text-slate-500 mb-2">
+                  This number will be dialed when residents press "Call Gate" in the app.
+                  Format: +234...
+                </p>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Phone className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+                    <input
+                      type="tel"
+                      className="w-full border p-2 pl-10 rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                      placeholder="+2348012345678"
+                      value={securityPhone}
+                      onChange={e => setSecurityPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
   if (currentView === 'billing') {
     return (
       <div className="space-y-6">
@@ -442,8 +508,8 @@ export const EstateAdminDashboard: React.FC<Props> = ({ user, currentView = 'ove
                     <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">${bill.amount.toFixed(2)}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded text-xs font-bold ${bill.status === BillStatus.PAID
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                        : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
                         }`}>
                         {bill.status}
                       </span>

@@ -3,10 +3,10 @@ import 'api_service.dart';
 class EstateAdminApiClient {
   // ============= Authentication =============
   
-  static Future<Map<String, dynamic>> login(String email, String password) async {
+  static Future<Map<String, dynamic>> login(String phone, String password) async {
     final response = await ApiService.post(
       '/auth/login',
-      {'email': email, 'password': password},
+      {'phone': phone, 'password': password},
       requiresAuth: false,
     );
     
@@ -17,14 +17,71 @@ class EstateAdminApiClient {
     return response;
   }
   
+  // ============= OTP Management =============
+  
+  static Future<Map<String, dynamic>> sendOTP(String phone, {String purpose = 'registration'}) async {
+    final response = await ApiService.post(
+      '/auth/send-otp',
+      {'phone': phone, 'purpose': purpose},
+      requiresAuth: false,
+    );
+    return response;
+  }
+  
+  static Future<bool> verifyOTP(String phone, String code, {String purpose = 'registration'}) async {
+    final response = await ApiService.post(
+      '/auth/verify-otp',
+      {'phone': phone, 'code': code, 'purpose': purpose},
+      requiresAuth: false,
+    );
+    return response['verified'] == true;
+  }
+  
   static Future<void> logout() async {
     await ApiService.clearToken();
+  }
+
+  // ============= Estate Admin Registration =============
+  
+  static Future<Map<String, dynamic>> registerEstateAdmin({
+    required Map<String, String> user,
+    required Map<String, String> estate,
+  }) async {
+    final response = await ApiService.post(
+      '/auth/register-estate-admin',
+      {
+        'user': user,
+        'estate': estate,
+      },
+      requiresAuth: false,
+    );
+    return response;
+  }
+
+  // ============= Admin Role Transfer =============
+  
+  static Future<Map<String, dynamic>> transferAdmin(String newAdminUserId) async {
+    final response = await ApiService.post(
+      '/estate-admin/transfer-admin',
+      {'newAdminUserId': newAdminUserId},
+    );
+    return response;
   }
   
   // ============= Dashboard Stats =============
   
   static Future<Map<String, dynamic>> getEstateStats() async {
     final response = await ApiService.get('/estates/stats');
+    return response;
+  }
+
+  static Future<Map<String, dynamic>> getEstate(String id) async {
+    final response = await ApiService.get('/estates/$id');
+    return response;
+  }
+
+  static Future<Map<String, dynamic>> updateEstate(String id, Map<String, dynamic> data) async {
+    final response = await ApiService.put('/estates/$id', data);
     return response;
   }
   
@@ -40,7 +97,7 @@ class EstateAdminApiClient {
   }
   
   static Future<void> rejectResident(String userId) async {
-    await ApiService.post('/users/$userId/reject', {});
+    await ApiService.delete('/users/$userId');
   }
   
   static Future<List<dynamic>> getAllResidents() async {

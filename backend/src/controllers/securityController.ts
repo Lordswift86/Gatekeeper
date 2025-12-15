@@ -30,3 +30,12 @@ export const createAnnouncement = async (req: AuthRequest, res: Response) => {
         res.status(400).json({ message: e.message })
     }
 }
+
+export const triggerSOS = async (req: AuthRequest, res: Response) => {
+    try {
+        const alert = await SecurityService.triggerSOS(req.user!.estateId!, req.user!.userId, req.body.location)
+        res.status(201).json(alert)
+    } catch (e: any) {
+        res.status(400).json({ message: e.message })
+    }
+}

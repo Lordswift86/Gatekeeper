@@ -29,7 +29,7 @@ export const EstateService = {
         })
     },
 
-    async updateEstate(id: string, data: { name?: string, tier?: string }) {
+    async updateEstate(id: string, data: { name?: string, tier?: string, securityPhone?: string }) {
         return prisma.estate.update({
             where: { id },
             data
