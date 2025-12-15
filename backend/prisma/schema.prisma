@@ -171,6 +171,8 @@ model EmergencyAlert {
 
 model GlobalAd {
   id          String    @id @default(uuid())
+  title       String
+  content     String
   imageUrl    String?   // Optional for backward compatibility
   targetUrl   String?
   isActive    Boolean   @default(true)

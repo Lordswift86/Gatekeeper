@@ -24,4 +24,5 @@ dist-ssr
 *.sw?
 
 # Flutter SDK
-gatekeeper_resident_flutter/flutter_sdk/
+**/flutter_sdk/
+**/build/
