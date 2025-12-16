@@ -61,7 +61,7 @@ async function main() {
             data: {
                 id: 'u_0',
                 name: 'Super Admin',
-                email: 'admin@gatekeeper.com',
+                email: 'admin@kitaniz.com',
                 role: 'SUPER_ADMIN',
                 password,
                 isApproved: true

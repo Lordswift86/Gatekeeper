@@ -7,7 +7,7 @@ interface AuthProps {
 }
 
 export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
-  const [email, setEmail] = useState('admin@gatekeeper.com');
+  const [email, setEmail] = useState('admin@kitaniz.com');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
