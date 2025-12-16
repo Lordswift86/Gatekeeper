@@ -89,6 +89,21 @@ class ApiService {
     }
   }
   
+  // HTTP DELETE
+  static Future<dynamic> delete(String endpoint, {bool requiresAuth = true}) async {
+    try {
+      final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+      final headers = await getHeaders(includeAuth: requiresAuth);
+      
+      final response = await http.delete(url, headers: headers)
+          .timeout(ApiConfig.timeoutDuration);
+      
+      return _handleResponse(response);
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+  
   // Handle response
   static dynamic _handleResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {

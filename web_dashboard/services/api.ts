@@ -168,6 +168,14 @@ export const api = {
         await axiosInstance.post(`/passes/${passId}/exit`);
     },
 
+    async cancelPass(passId: string): Promise<void> {
+        await axiosInstance.delete(`/passes/${passId}`);
+    },
+
+    async triggerSOS(location?: string): Promise<void> {
+        await axiosInstance.post('/security/alert', { location });
+    },
+
     // ============= Bills =============
 
     async getMyBills(): Promise<Bill[]> {

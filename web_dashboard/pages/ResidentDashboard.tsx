@@ -338,7 +338,7 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
                 </div>
 
                 <div className="text-center mb-4">
-                    <span className={`inline-block px-4 py-2 rounded-full font-bold text-sm border ${moves > allowedMoves ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800' : 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800'}`}>
+                    <span className={`inline - block px - 4 py - 2 rounded - full font - bold text - sm border ${moves > allowedMoves ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800' : 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800'} `}>
                         Moves: {moves} / {allowedMoves}
                     </span>
                 </div>
@@ -400,12 +400,12 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
                                 <div
                                     key={index}
                                     onClick={() => handleCardClick(index)}
-                                    className={`aspect-square cursor-pointer transition-all duration-300 transform preserve-3d relative ${card.isFlipped || card.isMatched ? 'rotate-y-180' : ''}`}
+                                    className={`aspect - square cursor - pointer transition - all duration - 300 transform preserve - 3d relative ${card.isFlipped || card.isMatched ? 'rotate-y-180' : ''} `}
                                 >
-                                    <div className={`w-full h-full rounded-xl flex items-center justify-center shadow-sm transition-all ${card.isFlipped || card.isMatched
-                                        ? 'bg-white dark:bg-slate-800 border-2 border-indigo-500 dark:border-indigo-400 rotate-y-180'
-                                        : 'bg-indigo-600 dark:bg-indigo-800 hover:bg-indigo-500'
-                                        }`}>
+                                    <div className={`w - full h - full rounded - xl flex items - center justify - center shadow - sm transition - all ${card.isFlipped || card.isMatched
+                                            ? 'bg-white dark:bg-slate-800 border-2 border-indigo-500 dark:border-indigo-400 rotate-y-180'
+                                            : 'bg-indigo-600 dark:bg-indigo-800 hover:bg-indigo-500'
+                                        } `}>
                                         {(card.isFlipped || card.isMatched) ? (
                                             <Icon size={tileCount > 16 ? 16 : 24} className="text-indigo-600 dark:text-indigo-400 animate-fade-in" />
                                         ) : (
@@ -448,10 +448,10 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
                             <Card key={bill.id} className={bill.status === BillStatus.PAID ? 'opacity-75' : ''}>
                                 <CardBody>
                                     <div className="flex justify-between items-start mb-4">
-                                        <div className={`p-2 rounded-lg ${bill.status === BillStatus.PAID ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-600'}`}>
+                                        <div className={`p - 2 rounded - lg ${bill.status === BillStatus.PAID ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-600'} `}>
                                             <Wallet size={20} />
                                         </div>
-                                        <span className={`px-2 py-1 text-xs font-bold rounded uppercase ${bill.status === BillStatus.PAID ? 'bg-green-100 dark:bg-green-900/30 text-green-700' : 'bg-red-100 dark:bg-red-900/30 text-red-700'}`}>
+                                        <span className={`px - 2 py - 1 text - xs font - bold rounded uppercase ${bill.status === BillStatus.PAID ? 'bg-green-100 dark:bg-green-900/30 text-green-700' : 'bg-red-100 dark:bg-red-900/30 text-red-700'} `}>
                                             {bill.status}
                                         </span>
                                     </div>
@@ -531,7 +531,7 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
                                         </div>
                                     </div>
                                     <Button type="submit" fullWidth disabled={paymentProcessing} className="mt-4">
-                                        {paymentProcessing ? 'Processing Payment...' : `Pay $${selectedBill.amount.toFixed(2)}`}
+                                        {paymentProcessing ? 'Processing Payment...' : `Pay $${selectedBill.amount.toFixed(2)} `}
                                     </Button>
                                 </form>
                             </div>
@@ -579,10 +579,10 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
                                                 {pass.exitTime ? new Date(pass.exitTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`px-2 py-1 rounded text-xs font-bold ${pass.status === PassStatus.CHECKED_IN ? 'bg-green-100 text-green-700' :
-                                                    pass.status === PassStatus.EXPIRED ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' :
-                                                        'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                                    }`}>
+                                                <span className={`px - 2 py - 1 rounded text - xs font - bold ${pass.status === PassStatus.CHECKED_IN ? 'bg-green-100 text-green-700' :
+                                                        pass.status === PassStatus.EXPIRED ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' :
+                                                            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                    } `}>
                                                     {pass.status}
                                                 </span>
                                             </td>
@@ -713,14 +713,14 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
                                         <button
                                             type="button"
                                             onClick={() => setCreateType(PassType.ONE_TIME)}
-                                            className={`pb-2 text-sm font-medium transition-colors ${createType === PassType.ONE_TIME ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}
+                                            className={`pb - 2 text - sm font - medium transition - colors ${createType === PassType.ONE_TIME ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400' : 'text-slate-500 dark:text-slate-400'} `}
                                         >
                                             One-Time Visitor
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setCreateType(PassType.RECURRING)}
-                                            className={`pb-2 text-sm font-medium transition-colors ${createType === PassType.RECURRING ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}
+                                            className={`pb - 2 text - sm font - medium transition - colors ${createType === PassType.RECURRING ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400' : 'text-slate-500 dark:text-slate-400'} `}
                                         >
                                             Recurring Staff
                                         </button>
@@ -735,7 +735,7 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
                                                 <button
                                                     key={c} type="button"
                                                     onClick={() => setDeliveryCompany(c)}
-                                                    className={`text-xs py-2 rounded border ${deliveryCompany === c ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300'}`}
+                                                    className={`text - xs py - 2 rounded border ${deliveryCompany === c ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300'} `}
                                                 >
                                                     {c}
                                                 </button>
@@ -778,10 +778,10 @@ export const ResidentDashboard: React.FC<Props> = ({ user, showAds, currentView 
                                                     key={day}
                                                     type="button"
                                                     onClick={() => toggleDay(day)}
-                                                    className={`text-xs px-2 py-1 rounded border transition-colors ${selectedDays.includes(day)
-                                                        ? 'bg-indigo-100 border-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:border-indigo-700 dark:text-indigo-300 font-bold'
-                                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'
-                                                        }`}
+                                                    className={`text - xs px - 2 py - 1 rounded border transition - colors ${selectedDays.includes(day)
+                                                            ? 'bg-indigo-100 border-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:border-indigo-700 dark:text-indigo-300 font-bold'
+                                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'
+                                                        } `}
                                                 >
                                                     {day}
                                                 </button>

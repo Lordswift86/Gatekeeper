@@ -10,13 +10,13 @@ echo ""
 
 # Get the base directory
 BASE_DIR="$HOME/Desktop/AI PROJECTS/Gatekeeper"
-# FLUTTER_BIN="$BASE_DIR/gatekeeper_resident_flutter/flutter_sdk/flutter/bin/flutter"
-FLUTTER_BIN="flutter" # Assuming flutter is in PATH
+FLUTTER_BIN="$BASE_DIR/mobile/resident/flutter_sdk/flutter/bin/flutter"
 
 # Build Estate Admin
 echo "📱 Building Estate Admin APK..."
 cd "$BASE_DIR/mobile/estate_admin"
 $FLUTTER_BIN clean
+$FLUTTER_BIN pub get
 $FLUTTER_BIN build apk --release
 echo "✅ Estate Admin APK built!"
 echo ""
@@ -25,6 +25,7 @@ echo ""
 echo "📱 Building Resident APK..."
 cd "$BASE_DIR/mobile/resident"
 $FLUTTER_BIN clean
+$FLUTTER_BIN pub get
 $FLUTTER_BIN build apk --release
 echo "✅ Resident APK built!"
 echo ""
@@ -33,6 +34,7 @@ echo ""
 echo "📱 Building Security APK..."
 cd "$BASE_DIR/mobile/security"
 $FLUTTER_BIN clean
+$FLUTTER_BIN pub get
 $FLUTTER_BIN build apk --release
 echo "✅ Security APK built!"
 echo ""

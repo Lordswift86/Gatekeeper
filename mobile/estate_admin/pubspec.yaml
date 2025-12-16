@@ -1,7 +1,7 @@
 name: gatekeeper_estate_admin
 description: Estate Admin application for Gatekeeper Estate Management System
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

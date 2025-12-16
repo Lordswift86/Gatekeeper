@@ -138,6 +138,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class _DashboardHome extends StatelessWidget {
   final Map<String, dynamic>? stats;
   final bool isLoading;
+  final VoidCallback onRefresh;
   final Function(int) onNavigate;
 
   const _DashboardHome({this.stats, required this.isLoading, required this.onRefresh, required this.onNavigate});
@@ -587,6 +588,7 @@ class _ActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color? color;
+  final String? badge;
   final VoidCallback? onTap;
 
   const _ActionButton({required this.label, required this.icon, this.color, this.badge, this.onTap});

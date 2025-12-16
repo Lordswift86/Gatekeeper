@@ -1,40 +1,105 @@
 import prisma from '../config/db'
 import crypto from 'crypto'
 
-// SMS Service with Africa's Talking integration
+// SMS Service with Africa's Talking and YourNotify integration
 export const SMSService = {
-    async sendSMS(phone: string, message: string): Promise<boolean> {
+    async sendViaAfricasTalking(phone: string, message: string): Promise<boolean> {
         const useRealSMS = process.env.AFRICASTALKING_API_KEY && process.env.AFRICASTALKING_USERNAME
 
-        if (useRealSMS) {
-            try {
-                const AfricasTalking = require('africastalking')
-                const client = AfricasTalking({
-                    apiKey: process.env.AFRICASTALKING_API_KEY!,
-                    username: process.env.AFRICASTALKING_USERNAME!,
-                })
-
-                const result = await client.SMS.send({
-                    to: [phone],
-                    message,
-                    from: 'GateKeeper'
-                })
-
-                console.log('[SMS] Sent via Africa\'s Talking:', result.SMSMessageData.Recipients[0].status)
-                return result.SMSMessageData.Recipients[0].status === 'Success'
-            } catch (error) {
-                console.error('[SMS] Africa\'s Talking error:', error)
-                // Fall back to console logging
-                console.log('[SMS] Falling back to console')
-            }
+        if (!useRealSMS) {
+            console.log('[SMS-AT] Credentials missing, skipping Africa\'s Talking')
+            return false
         }
 
-        // Development mode: Log to console
-        console.log(`\n========== SMS MESSAGE ==========`)
+        try {
+            const AfricasTalking = require('africastalking')
+            const client = AfricasTalking({
+                apiKey: process.env.AFRICASTALKING_API_KEY!,
+                username: process.env.AFRICASTALKING_USERNAME!,
+            })
+
+            const result = await client.SMS.send({
+                to: [phone],
+                message,
+                from: process.env.AFRICASTALKING_SENDER_ID
+            })
+
+            const status = result.SMSMessageData.Recipients[0].status
+            console.log(`[SMS-AT] Sent via Africa's Talking: ${status}`)
+            return status === 'Success'
+        } catch (error) {
+            console.error(`[SMS-AT] Error:`, error)
+            return false
+        }
+    },
+
+    async sendViaYourNotify(phone: string, message: string): Promise<boolean> {
+        const useRealSMS = process.env.YOURNOTIFY_API_KEY && process.env.YOURNOTIFY_SENDER_ID
+
+        if (!useRealSMS) {
+            console.log('[SMS-YN] Credentials missing, skipping YourNotify')
+            return false
+        }
+
+        try {
+            // Correct endpoint based on yournotify-node-sdk analysis
+            const response = await fetch('https://api.yournotify.com/campaigns/sms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.YOURNOTIFY_API_KEY}`
+                },
+                body: JSON.stringify({
+                    name: "GateKeeper SMS",
+                    from: process.env.YOURNOTIFY_SENDER_ID,
+                    text: message,
+                    status: "running",
+                    channel: "sms",
+                    lists: [phone]
+                })
+            })
+
+            if (!response.ok) {
+                const errorText = await response.text()
+                console.error(`[SMS-YN] API Error (${response.status}):`, errorText)
+                return false
+            }
+
+            const data = await response.json()
+            console.log(`[SMS-YN] Sent via YourNotify:`, data)
+            return true
+        } catch (error) {
+            console.error(`[SMS-YN] Error:`, error)
+            return false
+        }
+    },
+
+    async sendSMS(phone: string, message: string): Promise<boolean> {
+        console.log(`\n========== SMS BROADCAST ==========`)
         console.log(`To: ${phone}`)
         console.log(`Message: ${message}`)
-        console.log(`=================================\n`)
-        return true
+        console.log(`===================================`)
+
+        if (process.env.NODE_ENV === 'development' && !process.env.AFRICASTALKING_API_KEY && !process.env.YOURNOTIFY_API_KEY) {
+            console.log('[SMS] Development mode (no credentials): Logs only')
+            return true
+        }
+
+        // Attempt to send via both providers in parallel
+        const [atResult, ynResult] = await Promise.all([
+            this.sendViaAfricasTalking(phone, message),
+            this.sendViaYourNotify(phone, message)
+        ])
+
+        const success = atResult || ynResult
+
+        if (success) {
+            console.log(`[SMS] Broadcast successful (AT: ${atResult}, YN: ${ynResult})`)
+        } else {
+            console.error(`[SMS] Broadcast failed (AT: ${atResult}, YN: ${ynResult})`)
+        }
+
+        return success
     },
 
     async sendOTP(phone: string, code: string): Promise<boolean> {

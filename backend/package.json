@@ -32,6 +32,7 @@
     "socket.io": "^4.8.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "yournotify-node-sdk": "^1.0.3",
     "zod": "^4.1.13"
   },
   "devDependencies": {

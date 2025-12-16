@@ -238,7 +238,7 @@ export const AdminDashboard: React.FC<Props> = ({ user, currentView = 'overview'
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h5 className="font-bold text-slate-900 dark:text-white">{a.title}</h5>
-                      <span className="text-xs text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{a.date}</span>
+                      <span className="text-xs text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{new Date(a.createdAt).toLocaleDateString()}</span>
                     </div>
                     <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">{a.content}</p>
                   </div>

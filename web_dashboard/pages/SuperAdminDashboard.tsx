@@ -41,10 +41,15 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
     }
   };
 
-  const toggleTier = async (id: string) => {
-    // Future: api.updateEstateTier(id)
-    alert('Tier change simulation - endpoint needed');
-    refreshData();
+  const toggleTier = async (id: string, currentTier: SubscriptionTier) => {
+    try {
+      const newTier = currentTier === SubscriptionTier.FREE ? SubscriptionTier.PREMIUM : SubscriptionTier.FREE;
+      await api.updateEstate(id, { subscriptionTier: newTier });
+      await refreshData();
+    } catch (e) {
+      console.error('Failed to update tier:', e);
+      alert('Failed to update subscription tier');
+    }
   };
 
   const toggleStatus = async (id: string) => {
@@ -211,8 +216,8 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
                   <td className="px-6 py-4 font-mono">{estate.code}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${estate.subscriptionTier === SubscriptionTier.PREMIUM
-                        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
-                        : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
+                      : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                       }`}>
                       {estate.subscriptionTier === SubscriptionTier.PREMIUM ? (
                         <><BadgeCheck size={12} /> PREMIUM</>
@@ -234,7 +239,7 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
                   </td>
                   <td className="px-6 py-4 text-right space-x-2">
                     <button
-                      onClick={() => toggleTier(estate.id)}
+                      onClick={() => toggleTier(estate.id, estate.subscriptionTier)}
                       className="text-indigo-600 dark:text-indigo-400 hover:underline text-xs font-medium"
                     >
                       {estate.subscriptionTier === SubscriptionTier.PREMIUM ? 'Downgrade' : 'Upgrade'}
