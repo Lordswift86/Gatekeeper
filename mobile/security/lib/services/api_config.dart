@@ -1,9 +1,9 @@
 class ApiConfig {
   // Development
-  static const String devBaseUrl = 'http://localhost:3000/api';
+  static const String devBaseUrl = 'https://kitaniz.cloud/api';
   
-  // Production (to be configured later)
-  static const String prodBaseUrl = 'https://api.gatekeeper.com/api';
+  // Production
+  static const String prodBaseUrl = 'https://kitaniz.cloud/api';
   
   static String get baseUrl => 
       const bool.fromEnvironment('dart.vm.product') 

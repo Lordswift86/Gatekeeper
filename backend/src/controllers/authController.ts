@@ -36,3 +36,23 @@ export const registerEstateAdmin = async (req: Request, res: Response) => {
         res.status(400).json({ message: error.message || 'Estate admin registration failed' })
     }
 }
+
+export const refreshToken = async (req: Request, res: Response) => {
+    try {
+        const { refreshToken } = req.body
+        const result = await AuthService.refreshAccessToken(refreshToken)
+        res.json(result)
+    } catch (error: any) {
+        res.status(403).json({ message: error.message || 'Token refresh failed' })
+    }
+}
+
+export const logout = async (req: Request, res: Response) => {
+    try {
+        const { refreshToken } = req.body
+        await AuthService.logout(refreshToken)
+        res.json({ message: 'Logged out successfully' })
+    } catch (error: any) {
+        res.status(200).json({ message: 'Logged out successfully' }) // Always return success for logout
+    }
+}

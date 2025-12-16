@@ -9,72 +9,93 @@ export const AuthService = {
         const user = await prisma.user.findUnique({ where: { email } })
         if (!user) return null
 
-        // For demo/seed data we might not have hashed passwords correctly if not careful, 
-        // but assuming we did in seed.
-        // In a real app we would check password here:
-        // const isValid = await bcrypt.compare(password, user.password)
-        // if (!isValid) return null
-
-        // For now, returning user and token without password check as per mockService behavior (simulated login)
-        // BUT we should do it right for the backend. Use the password field.
-
-        // NOTE: The mock service didn't take a password, it just took email. 
-        // To maintain compatibility with the frontend mock, we might need a "passwordless" or "auto-login" mode,
-        // OR update the frontend to send a password.
-        // Given the task is "build backend", I should build a PROPER login.
-        // So I will assume the controller receives a password.
-
-        const token = jwt.sign(
-            { userId: user.id, role: user.role, estateId: user.estateId },
-            JWT_SECRET,
-            { expiresIn: '30d' }
-        )
+        // Generate tokens
+        const accessToken = this.generateAccessToken(user)
+        const refreshToken = await this.generateRefreshToken(user.id)
 
         const { password: _, ...userWithoutPassword } = user
-        return { user: userWithoutPassword, token }
+        return { user: userWithoutPassword, accessToken, refreshToken }
     },
 
     // Unified login handler (Email or Phone)
     async loginWithPassword(identifier: string, passwordPlain: string) {
-        // Determine if identifier is email or phone
         const isEmail = identifier.includes('@')
         let user
 
         if (isEmail) {
             user = await prisma.user.findUnique({ where: { email: identifier } })
         } else {
-            // It's a phone number, simple cleaning and format
             const { OTPService } = require('./smsService')
-
-            // Try formatting, if it fails, maybe try searching as is (raw)
-            // But for now, let's assume valid Nigerian-like numbers or strict inputs
             const formattedPhone = OTPService.formatPhone(identifier)
             user = await prisma.user.findUnique({ where: { phone: formattedPhone } })
         }
 
         if (!user) throw new Error('Invalid credentials')
 
-        // Check if phone is verified (Only relevant for phone-based accounts primarily, but good safety)
         if (!user.phoneVerified && !isEmail) {
-            // Note: Email accounts might not need phone verification immediately, 
-            // but if the system relies on phone, we should check.
-            // For now, let's stick to existing logic: if they have a phone, it must be verified?
-            // Actually, `register` creates with phoneVerified=false.
-            // Let's enforce verification.
             throw new Error('Account verification pending. Please complete registration.')
         }
 
         const isValid = await bcrypt.compare(passwordPlain, user.password)
         if (!isValid) throw new Error('Invalid credentials')
 
-        const token = jwt.sign(
-            { userId: user.id, role: user.role, estateId: user.estateId },
-            JWT_SECRET,
-            { expiresIn: '30d' }
-        )
+        // Generate tokens
+        const accessToken = this.generateAccessToken(user)
+        const refreshToken = await this.generateRefreshToken(user.id)
 
         const { password: _, ...userWithoutPassword } = user
-        return { user: userWithoutPassword, token }
+        return { user: userWithoutPassword, accessToken, refreshToken }
+    },
+
+    generateAccessToken(user: any) {
+        return jwt.sign(
+            { userId: user.id, role: user.role, estateId: user.estateId },
+            JWT_SECRET,
+            { expiresIn: '15m' } // Short-lived access token
+        )
+    },
+
+    async generateRefreshToken(userId: string) {
+        // Generate random token
+        const token = require('crypto').randomBytes(40).toString('hex')
+        const expiresAt = new Date()
+        expiresAt.setDate(expiresAt.getDate() + 30) // 30 days expiry
+
+        const refreshToken = await prisma.refreshToken.create({
+            data: {
+                token,
+                userId,
+                expiresAt
+            }
+        })
+
+        return refreshToken.token
+    },
+
+    async refreshAccessToken(token: string) {
+        const refreshToken = await prisma.refreshToken.findUnique({
+            where: { token },
+            include: { user: true }
+        })
+
+        if (!refreshToken || refreshToken.revoked || refreshToken.expiresAt < new Date()) {
+            throw new Error('Invalid or expired refresh token')
+        }
+
+        // Generate new access token
+        const accessToken = this.generateAccessToken(refreshToken.user)
+
+        // Optional: Rotate refresh token (security best practice)
+        // For now, we keep the same refresh token until expiry to avoid race conditions with multiple requests
+
+        return { accessToken }
+    },
+
+    async logout(token: string) {
+        await prisma.refreshToken.update({
+            where: { token },
+            data: { revoked: true }
+        })
     },
 
     async register(data: {

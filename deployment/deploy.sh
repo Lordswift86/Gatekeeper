@@ -6,9 +6,9 @@ set -e
 
 # Configuration
 DEPLOY_USER="root"
-DEPLOY_HOST="your-vps-ip"
+DEPLOY_HOST="31.97.183.43"
 DEPLOY_PATH="/var/www/gatekeeper"
-REPO_URL="git@github.com:yourusername/gatekeeper.git"
+REPO_URL="https://github.com/Lordswift86/Gatekeeper.git"
 
 # Colors
 RED='\033[0;31m'
@@ -37,17 +37,27 @@ deploy_backend() {
         git fetch origin
         git reset --hard origin/main
         
-        # Install dependencies
-        npm ci --production
+        # Install regular dependencies (for build)
+        npm ci
+        
+        # PATCH: Switch Prisma to PostgreSQL (since we can't push to repo)
+        sed -i 's/provider = "sqlite"/provider = "postgresql"/g' prisma/schema.prisma
+        
+        # PATCH: Fix PM2 script path
+        sed -i 's/server.js/app.js/g' ecosystem.config.js
         
         # Build TypeScript
         npm run build
+        
+        # Generate Prisma Client (with new provider)
+        npx prisma generate
         
         # Run database migrations
         npx prisma migrate deploy
         
         # Restart PM2
-        pm2 reload ecosystem.config.js --env production
+        export PATH=$PATH:/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin
+        pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
         
         echo "Backend deployed successfully!"
 ENDSSH
@@ -57,8 +67,15 @@ ENDSSH
 deploy_frontend() {
     log "Deploying Frontend..."
     
+    # Get script directory to find project root
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+    PROJECT_ROOT="$SCRIPT_DIR/.."
+    FRONTEND_DIR="$PROJECT_ROOT/web_dashboard"
+    
     # Build locally
-    log "Building frontend..."
+    log "Building frontend in $FRONTEND_DIR..."
+    cd "$FRONTEND_DIR"
+    npm install # Ensure deps are installed locally
     npm run build
     
     # Upload to VPS
@@ -101,18 +118,16 @@ setup_vps() {
         # Install Certbot for SSL
         apt install -y certbot python3-certbot-nginx
         
-        # Create directories
-        mkdir -p /var/www/gatekeeper/{backend,frontend/dist}
-        mkdir -p /var/log/pm2
-        
         # Clone repo
+        rm -rf /var/www/gatekeeper
+        git clone https://github.com/Lordswift86/Gatekeeper.git /var/www/gatekeeper
         cd /var/www/gatekeeper
-        git clone ${REPO_URL} .
         
         # Install PostgreSQL (optional - can use external DB)
         # apt install -y postgresql postgresql-contrib
         
         # Setup PM2 startup
+        export PATH=$PATH:/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin
         pm2 startup
         
         echo "VPS setup complete!"

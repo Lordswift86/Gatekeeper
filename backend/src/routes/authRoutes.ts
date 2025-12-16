@@ -1,6 +1,7 @@
 import { Router } from 'express'
-import { login, register, registerEstateAdmin } from '../controllers/authController'
+import { login, register, registerEstateAdmin, refreshToken, logout } from '../controllers/authController'
 import { sendOTP, verifyOTP } from '../controllers/otpController'
+import { validate, schemas } from '../middleware/validate'
 
 const router = Router()
 
@@ -32,12 +33,16 @@ const router = Router()
  *             schema:
  *               type: object
  *               properties:
- *                 token:
+ *                 accessToken:
+ *                   type: string
+ *                 refreshToken:
  *                   type: string
  *                 user:
  *                   type: object
  */
-router.post('/login', login)
+router.post('/login', validate(schemas.login), login)
+router.post('/refresh', refreshToken)
+router.post('/logout', logout)
 
 /**
  * @swagger
@@ -75,11 +80,11 @@ router.post('/login', login)
  *       201:
  *         description: Registration successful
  */
-router.post('/register', register)
-router.post('/register-estate-admin', registerEstateAdmin)
+router.post('/register', validate(schemas.register), register)
+router.post('/register-estate-admin', validate(schemas.register), registerEstateAdmin) // Reusing register schema for now as it's similar enough or create strict one
 
 // OTP routes
-router.post('/send-otp', sendOTP)
+router.post('/send-otp', sendOTP) // Consider adding schema for this too
 router.post('/verify-otp', verifyOTP)
 
 export default router
