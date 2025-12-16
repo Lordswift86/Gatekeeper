@@ -74,7 +74,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
               width: 250,
               height: 250,
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Column(

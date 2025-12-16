@@ -112,7 +112,7 @@ class _OTPVerificationDialogState extends State<OTPVerificationDialog> {
 
   Future<void> _resendOTP() async {
     try {
-      await widget.onResend();
+      widget.onResend();
       _resetTimer();
       for (var controller in _controllers) {
         controller.clear();

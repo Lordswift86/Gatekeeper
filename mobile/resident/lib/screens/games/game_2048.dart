@@ -294,7 +294,7 @@ class _Game2048State extends State<Game2048> {
                           if (isGameOver || hasWon)
                             Container(
                               decoration: BoxDecoration(
-                                color: (hasWon ? Colors.amber : Colors.black).withOpacity(0.7),
+                                color: (hasWon ? Colors.amber : Colors.black).withValues(alpha: 0.7),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Center(

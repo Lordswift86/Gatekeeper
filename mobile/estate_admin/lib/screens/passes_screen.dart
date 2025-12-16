@@ -78,7 +78,7 @@ class _PassCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: statusColor.withOpacity(0.2),
+          backgroundColor: statusColor.withValues(alpha: 0.2),
           child: Icon(_getTypeIcon(type), color: statusColor, size: 20),
         ),
         title: Text(pass['guestName'] ?? 'Unknown Guest'),
@@ -94,12 +94,12 @@ class _PassCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.2),
+                color: statusColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 status,
-                style: TextStyle(fontSize: 10, color: statusColor.withOpacity(0.9), fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 10, color: statusColor.withValues(alpha: 0.9), fontWeight: FontWeight.bold),
               ),
             ),
           ],

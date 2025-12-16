@@ -330,7 +330,7 @@ class _BreathingExerciseState extends State<BreathingExercise> with TickerProvid
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: phaseColor.withOpacity(0.3),
+                              color: phaseColor.withValues(alpha: 0.3),
                               blurRadius: 30,
                               spreadRadius: 10,
                             ),
@@ -343,8 +343,8 @@ class _BreathingExerciseState extends State<BreathingExercise> with TickerProvid
                               shape: BoxShape.circle,
                               gradient: RadialGradient(
                                 colors: [
-                                  phaseColor.withOpacity(0.9),
-                                  phaseColor.withOpacity(0.5),
+                                  phaseColor.withValues(alpha: 0.9),
+                                  phaseColor.withValues(alpha: 0.5),
                                 ],
                               ),
                             ),
@@ -381,7 +381,7 @@ class _BreathingExerciseState extends State<BreathingExercise> with TickerProvid
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.indigo.withOpacity(0.05),
+                color: Colors.indigo.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(

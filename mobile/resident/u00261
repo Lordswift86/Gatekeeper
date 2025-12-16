@@ -1,0 +1,50 @@
+50 issues found. (ran in 1.8s)
+Unhandled exception:
+FileSystemException: writeFrom failed, path = '' (OS Error: Broken pipe, errno = 32)
+#0      _RandomAccessFile.writeFromSync (dart:io/file_impl.dart:1027:7)
+#1      _StdConsumer.addStream.<anonymous closure> (dart:io/stdio.dart:328:17)
+#2      _rootRunUnary (dart:async/zone.dart:1546:13)
+#3      _CustomZone.runUnary (dart:async/zone.dart:1429:19)
+#4      _CustomZone.runUnaryGuarded (dart:async/zone.dart:1329:7)
+#5      _BufferingStreamSubscription._sendData (dart:async/stream_impl.dart:381:11)
+#6      _BufferingStreamSubscription._add (dart:async/stream_impl.dart:312:7)
+#7      _SyncStreamControllerDispatch._sendData (dart:async/stream_controller.dart:798:19)
+#8      _StreamController._add (dart:async/stream_controller.dart:663:7)
+#9      _StreamController.add (dart:async/stream_controller.dart:618:5)
+#10     _StreamSinkImpl.add (dart:io/io_sink.dart:155:17)
+#11     _IOSinkImpl.write (dart:io/io_sink.dart:293:5)
+#12     _StdSink._write (dart:io/stdio.dart:429:13)
+#13     _StdSink.write (dart:io/stdio.dart:438:33)
+#14     Stdio._stdioWrite.<anonymous closure> (package:flutter_tools/src/base/io.dart:328:14)
+#15     asyncGuard.<anonymous closure> (package:flutter_tools/src/base/async_guard.dart:108:32)
+#16     _rootRun (dart:async/zone.dart:1525:13)
+#17     _CustomZone.run (dart:async/zone.dart:1422:19)
+#18     _runZoned (dart:async/zone.dart:2034:6)
+#19     runZonedGuarded (dart:async/zone.dart:2020:12)
+#20     asyncGuard (package:flutter_tools/src/base/async_guard.dart:106:3)
+#21     Stdio._stdioWrite (package:flutter_tools/src/base/io.dart:326:5)
+#22     Stdio.stdoutWrite (package:flutter_tools/src/base/io.dart:312:7)
+#23     StdoutLogger.writeToStdOut (package:flutter_tools/src/base/logger.dart:552:48)
+#24     StdoutLogger.printStatus (package:flutter_tools/src/base/logger.dart:534:5)
+#25     AnalyzeOnce.analyze (package:flutter_tools/src/commands/analyze_once.dart:138:14)
+<asynchronous suspension>
+#26     AnalyzeCommand.runCommand (package:flutter_tools/src/commands/analyze.dart:381:7)
+<asynchronous suspension>
+#27     FlutterCommand.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command.dart:1559:27)
+<asynchronous suspension>
+#28     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+<asynchronous suspension>
+#29     CommandRunner.runCommand (package:args/command_runner.dart:212:13)
+<asynchronous suspension>
+#30     FlutterCommandRunner.runCommand.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:487:9)
+<asynchronous suspension>
+#31     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+<asynchronous suspension>
+#32     FlutterCommandRunner.runCommand (package:flutter_tools/src/runner/flutter_command_runner.dart:422:5)
+<asynchronous suspension>
+#33     run.<anonymous closure>.<anonymous closure> (package:flutter_tools/runner.dart:104:11)
+<asynchronous suspension>
+#34     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+<asynchronous suspension>
+#35     main (package:flutter_tools/executable.dart:103:3)
+<asynchronous suspension>

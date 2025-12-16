@@ -92,9 +92,9 @@ class _LoginScreenState extends State<LoginScreen> {
                    width: 80,
                    height: 80,
                    decoration: BoxDecoration(
-                     color: Colors.white.withOpacity(0.1),
+                     color: Colors.white.withValues(alpha: 0.1),
                      borderRadius: BorderRadius.circular(20),
-                     border: Border.all(color: Colors.white.withOpacity(0.2))
+                     border: Border.all(color: Colors.white.withValues(alpha: 0.2))
                    ),
                    child: const Icon(LucideIcons.shieldCheck, color: Colors.white, size: 40),
                  ),
@@ -110,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
                      color: Colors.white,
                      borderRadius: BorderRadius.circular(24),
                      boxShadow: [
-                       BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))
+                       BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 10))
                      ]
                    ),
                    child: Column(

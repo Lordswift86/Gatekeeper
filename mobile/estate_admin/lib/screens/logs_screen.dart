@@ -134,7 +134,7 @@ class _LogCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: isActive ? Colors.green.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+          backgroundColor: isActive ? Colors.green.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
           child: Icon(
             isActive ? Icons.login : Icons.logout,
             color: isActive ? Colors.green : Colors.grey,
@@ -151,7 +151,7 @@ class _LogCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: log['type'] == 'MANUAL' ? Colors.orange.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
+                color: log['type'] == 'MANUAL' ? Colors.orange.withValues(alpha: 0.2) : Colors.blue.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

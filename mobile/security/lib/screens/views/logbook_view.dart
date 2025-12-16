@@ -162,7 +162,7 @@ class _LogbookViewState extends State<LogbookView> {
                      
                      return ListTile(
                        leading: CircleAvatar(
-                          backgroundColor: logType == 'DIGITAL' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                          backgroundColor: logType == 'DIGITAL' ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
                           child: Icon(logType == 'DIGITAL' ? LucideIcons.qrCode : LucideIcons.pencil, size: 16, color: logType == 'DIGITAL' ? Colors.green : Colors.orange),
                        ),
                        title: Text(log['guestName'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.bold)),

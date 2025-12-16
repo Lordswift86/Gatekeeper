@@ -185,7 +185,7 @@ class _ColorSwitchGameState extends State<ColorSwitchGame> with SingleTickerProv
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.indigo.withOpacity(0.1),
+                    color: Colors.indigo.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.indigo),
                   ),
@@ -305,7 +305,7 @@ class _ColorSwitchGameState extends State<ColorSwitchGame> with SingleTickerProv
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: currentColor.withOpacity(0.4),
+                  color: currentColor.withValues(alpha: 0.4),
                   blurRadius: 20,
                   spreadRadius: 5,
                 ),

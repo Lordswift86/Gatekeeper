@@ -220,7 +220,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(_getBillIcon(bill.type), color: Colors.orange, size: 20),
@@ -242,7 +242,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                     if (isOverdue)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
                         child: const Text('OVERDUE', style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold)),
                       ),
                   ],
@@ -277,7 +277,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Colors.green.withOpacity(0.1),
+          backgroundColor: Colors.green.withValues(alpha: 0.1),
           child: const Icon(LucideIcons.checkCircle, color: Colors.green, size: 20),
         ),
         title: Text(bill.description, style: const TextStyle(fontSize: 14)),

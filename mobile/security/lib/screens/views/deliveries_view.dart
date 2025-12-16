@@ -108,7 +108,7 @@ class _DeliveriesViewState extends State<DeliveriesView> {
                       Text(guestName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(color: Colors.indigo.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(color: Colors.indigo.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                         child: Text("Unit $hostUnit", style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12)),
                       )
                     ],
@@ -135,12 +135,12 @@ class _DeliveriesViewState extends State<DeliveriesView> {
                         IconButton(
                           onPressed: () => _verifyDelivery(pass['id']),
                           icon: const Icon(LucideIcons.check, color: Colors.green),
-                          style: IconButton.styleFrom(backgroundColor: Colors.green.withOpacity(0.1)),
+                          style: IconButton.styleFrom(backgroundColor: Colors.green.withValues(alpha: 0.1)),
                         ),
                         IconButton(
                           onPressed: () => setState(() => _verifyingId = null),
                           icon: const Icon(LucideIcons.x, color: Colors.red),
-                          style: IconButton.styleFrom(backgroundColor: Colors.red.withOpacity(0.1)),
+                          style: IconButton.styleFrom(backgroundColor: Colors.red.withValues(alpha: 0.1)),
                         )
                       ],
                     )

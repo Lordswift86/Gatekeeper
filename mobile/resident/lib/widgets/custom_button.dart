@@ -24,7 +24,7 @@ class CustomButton extends StatelessWidget {
     Color textColor = Theme.of(context).colorScheme.onPrimary;
 
     if (isSecondary) {
-      backgroundColor = Theme.of(context).colorScheme.surfaceVariant;
+      backgroundColor = Theme.of(context).colorScheme.surfaceContainerHighest;
       textColor = Theme.of(context).colorScheme.onSurfaceVariant;
     } else if (isDanger) {
       backgroundColor = Theme.of(context).colorScheme.error;

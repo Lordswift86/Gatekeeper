@@ -146,9 +146,9 @@ class _ScannerViewState extends State<ScannerView> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.red.withOpacity(0.3))
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.3))
                 ),
                 child: Column(
                   children: [
@@ -211,7 +211,7 @@ class _ScannerViewState extends State<ScannerView> {
                   Container(
                     margin: const EdgeInsets.only(top: 16),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                    decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -228,9 +228,9 @@ class _ScannerViewState extends State<ScannerView> {
                     padding: const EdgeInsets.all(16),
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
+                      color: Colors.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.orange.withOpacity(0.3))
+                      border: Border.all(color: Colors.orange.withValues(alpha: 0.3))
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,6 +264,7 @@ class _ScannerViewState extends State<ScannerView> {
       ),
     );
   }
+
   Widget _buildIdentityCard(BuildContext context, Map<String, dynamic> user) {
     return Container(
       decoration: BoxDecoration(

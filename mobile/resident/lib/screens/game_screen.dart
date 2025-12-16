@@ -270,7 +270,7 @@ class _GameScreenState extends State<GameScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: _moves > _allowedMoves ? Colors.red.withOpacity(0.1) : Colors.indigo.withOpacity(0.1),
+                color: _moves > _allowedMoves ? Colors.red.withValues(alpha: 0.1) : Colors.indigo.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: _moves > _allowedMoves ? Colors.red : Colors.indigo),
               ),
@@ -328,7 +328,7 @@ class _GameScreenState extends State<GameScreen> {
                                   border: Border.all(color: Colors.indigo),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
+                                      color: Colors.black.withValues(alpha: 0.1),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),

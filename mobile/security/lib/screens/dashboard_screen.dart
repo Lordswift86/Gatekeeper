@@ -105,7 +105,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             decoration: BoxDecoration(
-              color: _isOffline ? Colors.orange.withOpacity(0.2) : Colors.green.withOpacity(0.2),
+              color: _isOffline ? Colors.orange.withValues(alpha: 0.2) : Colors.green.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: _isOffline ? Colors.orange : Colors.green),
             ),
