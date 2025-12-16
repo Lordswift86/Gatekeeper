@@ -2,7 +2,7 @@ import prisma from '../config/db'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret'
+
 
 export const AuthService = {
     async login(email: string) {
@@ -50,7 +50,7 @@ export const AuthService = {
     generateAccessToken(user: any) {
         return jwt.sign(
             { userId: user.id, role: user.role, estateId: user.estateId },
-            JWT_SECRET,
+            process.env.JWT_SECRET || 'secret',
             { expiresIn: '15m' } // Short-lived access token
         )
     },

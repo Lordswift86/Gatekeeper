@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import { ApiError } from './errorHandler'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret'
+
 
 export interface AuthRequest extends Request {
     user?: {
@@ -21,8 +21,11 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
         return next(ApiError.unauthorized('Access token required'))
     }
 
-    jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+    const secret = process.env.JWT_SECRET || 'secret'
+
+    jwt.verify(token, secret, (err: any, user: any) => {
         if (err) {
+            console.error('JWT Verification Error:', err.name, err.message);
             if (err.name === 'TokenExpiredError') {
                 return next(ApiError.unauthorized('Token has expired'))
             }
