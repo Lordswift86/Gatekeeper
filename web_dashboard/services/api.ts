@@ -111,6 +111,11 @@ export const api = {
         return data;
     },
 
+    async getAllUsers(): Promise<User[]> {
+        const { data } = await axiosInstance.get('/users');
+        return data;
+    },
+
     async getPendingUsers(): Promise<User[]> {
         const { data } = await axiosInstance.get('/users/pending');
         return data;

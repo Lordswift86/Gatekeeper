@@ -67,7 +67,7 @@ export const AdminDashboard: React.FC<Props> = ({ user, currentView = 'overview'
 
   const handleReject = async (userId: string) => {
     // Backend needs reject endpoint
-    alert('User rejected (placeholder)');
+    alert('User rejection feature not yet implemented in backend');
     refreshData();
   };
 
@@ -110,7 +110,7 @@ export const AdminDashboard: React.FC<Props> = ({ user, currentView = 'overview'
     if (confirm) {
       try {
         // For now just a simulation - would need batch endpoint
-        alert("Bulk upload simulation - bills would be created for all residents.");
+        alert("Bulk upload feature is not yet linked to the backend.");
         refreshData();
       } catch (e) {
         console.error('Bulk upload failed:', e);
@@ -118,12 +118,8 @@ export const AdminDashboard: React.FC<Props> = ({ user, currentView = 'overview'
     }
   };
 
-  // Mock Chart Data
-  const chartData = [
-    { name: 'Mon', visitors: 12 }, { name: 'Tue', visitors: 19 },
-    { name: 'Wed', visitors: 15 }, { name: 'Thu', visitors: 22 },
-    { name: 'Fri', visitors: 30 }, { name: 'Sat', visitors: 45 }, { name: 'Sun', visitors: 38 },
-  ];
+  // Chart Data (To be connected to API)
+  const chartData: any[] = [];
 
   const StatCard = ({ title, value, icon: Icon, color }: any) => (
     <Card>

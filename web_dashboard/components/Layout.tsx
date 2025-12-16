@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, UserRole, Estate, SubscriptionTier, CallStatus } from '../types';
 import { LogOut, ShieldCheck, Home, User as UserIcon, Settings, Menu, Megaphone, Building2, Globe, Sun, Moon, Truck, CreditCard, PhoneCall, Phone, Mic, MicOff, Video, PhoneOff, Gamepad2, Activity, Search } from 'lucide-react';
 import { AdBanner } from './AdBanner';
-import { MockService } from '../services/mockData';
+
 
 interface LayoutProps {
   user: User;
@@ -18,29 +18,8 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ user, estate, children, onLogout, currentView, onViewChange, theme, onThemeToggle }) => {
   const isFreeTier = estate?.subscriptionTier === SubscriptionTier.FREE;
   const showAds = isFreeTier && user.role === UserRole.RESIDENT; // Only residents see ads in free tier
+
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const [incomingCall, setIncomingCall] = useState<any>(null);
-  const [callMuted, setCallMuted] = useState(false);
-
-  // Poll for incoming calls if resident
-  useEffect(() => {
-    if (user.role === UserRole.RESIDENT) {
-      const interval = setInterval(() => {
-        const call = MockService.getIncomingCall(user.id);
-        setIncomingCall(call);
-      }, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [user.id, user.role]);
-
-  const handleAnswerCall = () => {
-    if (incomingCall) MockService.answerCall(incomingCall.id);
-  };
-
-  const handleEndCall = () => {
-    if (incomingCall) MockService.endCall(incomingCall.id);
-    setIncomingCall(null);
-  };
 
   const NavItem = ({ view, icon: Icon, label }: { view: string; icon: any; label: string }) => (
     <button
@@ -168,42 +147,7 @@ export const Layout: React.FC<LayoutProps> = ({ user, estate, children, onLogout
       {/* Conditional Ad Banner */}
       {showAds && <AdBanner position="footer" />}
 
-      {/* Incoming Call Overlay */}
-      {incomingCall && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800">
-            <div className="p-8 text-center">
-              <div className="w-24 h-24 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-                <Video className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Main Gate Security</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-8">{incomingCall.status === CallStatus.CONNECTED ? 'Audio Connected' : 'Incoming Call...'}</p>
 
-              {incomingCall.status === CallStatus.RINGING ? (
-                <div className="flex justify-center gap-6">
-                  <button onClick={handleEndCall} className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-transform hover:scale-105">
-                    <PhoneOff size={28} />
-                  </button>
-                  <button onClick={handleAnswerCall} className="w-16 h-16 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-transform hover:scale-105 animate-bounce">
-                    <Phone size={28} />
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="flex justify-center gap-4">
-                    <button onClick={() => setCallMuted(!callMuted)} className={`p-3 rounded-full ${callMuted ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
-                      {callMuted ? <MicOff /> : <Mic />}
-                    </button>
-                  </div>
-                  <button onClick={handleEndCall} className="w-full py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold flex items-center justify-center gap-2">
-                    <PhoneOff size={20} /> End Call
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

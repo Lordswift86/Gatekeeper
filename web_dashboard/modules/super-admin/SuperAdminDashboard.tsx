@@ -46,28 +46,17 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
     const refreshData = async () => {
         setIsLoading(true);
         try {
-            const [estatesData, usersData, adsData] = await Promise.all([
+            const [estatesData, usersData, adsData, logsData] = await Promise.all([
                 api.getAllEstates(),
                 api.getAllUsers?.() || Promise.resolve([]),
                 api.getGlobalAds(),
+                api.getSystemLogs?.() || Promise.resolve([])
             ]);
 
             setEstates(estatesData);
             setAllUsers(usersData);
             setAds(adsData);
-
-            // Calculate stats
-            setStats({
-                totalEstates: estatesData.length,
-                totalUsers: usersData.length,
-                adImpressions: adsData.reduce((sum, ad) => sum + (ad.impressions || 0), 0)
-            });
-
-            // Mock logs for now
-            setLogs([
-                { id: '1', action: 'Estate Created', details: 'New estate added', timestamp: Date.now(), severity: 'INFO', actor: 'System' },
-                { id: '2', action: 'User Approved', details: 'Resident approved', timestamp: Date.now(), severity: 'INFO', actor: 'Admin' },
-            ]);
+            setLogs(logsData);
         } catch (error) {
             console.error('Failed to load data:', error);
         } finally {

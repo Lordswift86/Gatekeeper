@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, UserRole, Estate } from './types';
-import { MockService } from './services/mockData';
+
 import { Layout } from './components/Layout';
 import { Auth } from './Auth';
 import { ResidentDashboard } from './modules/resident/ResidentDashboard';
@@ -62,11 +62,16 @@ function App() {
 
   useEffect(() => {
     if (user) {
-      if (user.role !== UserRole.SUPER_ADMIN) {
-        const e = MockService.getEstate(user.estateId);
-        setEstate(e);
+      if (user.role !== UserRole.SUPER_ADMIN && user.estateId) {
+        // Fetch estate details (except for Super Admin who has no specific estate)
+        api.getEstateById(user.estateId)
+          .then(e => setEstate(e))
+          .catch(err => {
+            console.error('Failed to load estate:', err);
+            // Optional: Handle error or setEstate(undefined)
+          });
       } else {
-        setEstate(undefined); // Super Admin has no specific estate
+        setEstate(undefined);
       }
 
       // Set default view based on role
