@@ -7,8 +7,8 @@ interface AuthProps {
 }
 
 export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
-  const [email, setEmail] = useState('admin@kitaniz.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,11 +104,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            Test Credentials:<br />
-            Super Admin: admin@gatekeeper.com / password123<br />
-            Estate Admin: alice@sunset.com / password123<br />
-            Resident: bob@sunset.com / password123<br />
-            Security: sam@sunset.com / password123
+            &copy; {new Date().getFullYear()} Gatekeeper. All rights reserved.
           </p>
         </div>
       </div>
