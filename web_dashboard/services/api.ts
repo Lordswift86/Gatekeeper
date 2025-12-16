@@ -41,8 +41,8 @@ export const api = {
 
     async login(email: string, password: string): Promise<{ user: User; token: string }> {
         const { data } = await axiosInstance.post('/auth/login', { email, password });
-        if (data.token) {
-            TokenManager.setToken(data.token);
+        if (data.accessToken) {
+            TokenManager.setToken(data.accessToken);
         }
         return data;
     },
