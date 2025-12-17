@@ -3,6 +3,7 @@ import { z, ZodSchema } from 'zod'
 import { ApiError } from './errorHandler'
 
 // Validation middleware factory
+// Updated schema to include phone validation
 export const validate = <T>(schema: ZodSchema<T>, source: 'body' | 'query' | 'params' = 'body') => {
     return (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -45,7 +46,8 @@ export const schemas = {
 
     register: z.object({
         name: z.string().min(2, 'Name must be at least 2 characters'),
-        email: z.string().email('Invalid email format'),
+        phone: z.string().min(10, 'Phone number is required'),
+        email: z.string().email('Invalid email format').optional(),
         password: z.string().min(8, 'Password must be at least 8 characters'),
         role: z.enum(['RESIDENT', 'SECURITY', 'ESTATE_ADMIN']),
         estateCode: z.string().min(1, 'Estate code is required'),

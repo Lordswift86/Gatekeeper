@@ -209,12 +209,15 @@ export const OTPService = {
     },
 
     validatePhoneFormat(phone: string): boolean {
+        if (!phone) return false
         // Nigerian phone format: +234XXXXXXXXXX
         const nigeriaRegex = /^\+234[789]\d{9}$/
         return nigeriaRegex.test(phone.replace(/[\s-]/g, ''))
     },
 
     formatPhone(phone: string): string {
+        console.log('[SMS] Formatting phone:', phone)
+        if (!phone) throw new Error('Phone number is missing')
         // Remove all spaces and dashes
         let cleaned = phone.replace(/[\s-]/g, '')
 
@@ -231,3 +234,4 @@ export const OTPService = {
         return cleaned
     }
 }
+console.log('✅ SMS Service Module Loaded')
