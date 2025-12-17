@@ -154,6 +154,7 @@ export interface GlobalAd {
   title: string;
   content: string;
   imageUrl?: string;
+  targetUrl?: string;
   impressions: number;
   isActive: boolean;
   createdAt: number;

@@ -246,6 +246,7 @@ export const api = {
         title: string;
         content: string;
         imageUrl?: string;
+        targetUrl?: string;
     }): Promise<any> {
         const { data } = await axiosInstance.post('/admin/global-ads', adData);
         return data;
