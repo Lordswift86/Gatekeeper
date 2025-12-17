@@ -44,6 +44,12 @@ model User {
   photoUrl      String?   // URL to profile photo
   isApproved    Boolean  @default(false)
   
+  // Referral system
+  referralCode  String?   @unique // User's unique referral code
+  referredBy    String?   // ID of user who referred them
+  referrer      User?     @relation("Referrals", fields: [referredBy], references: [id], onDelete: SetNull)
+  referrals     User[]    @relation("Referrals")
+  
   primaryUserId String?   // Null = Primary, Set = Sub-Account
   primaryUser   User?     @relation("Household", fields: [primaryUserId], references: [id])
   subAccounts   User[]    @relation("Household")

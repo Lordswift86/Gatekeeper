@@ -65,6 +65,28 @@ class EstateAdminApiClient {
     );
     return response;
   }
+  
+  // ============= Password Reset =============
+  
+  static Future<void> resetPassword(String phone, String newPassword) async {
+    await ApiService.post(
+      '/auth/reset-password',
+      {'phone': phone, 'newPassword': newPassword},
+      requiresAuth: false,
+    );
+  }
+  
+  // ============= Referrals =============
+  
+  static Future<String> getReferralCode() async {
+    final response = await ApiService.get('/users/me/referral-code');
+    return response['referralCode'];
+  }
+  
+  static Future<Map<String, dynamic>> getReferralStats() async {
+    final response = await ApiService.get('/users/me/referral-stats');
+    return response;
+  }
 
   // ============= Admin Role Transfer =============
   

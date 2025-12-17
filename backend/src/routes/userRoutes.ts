@@ -8,6 +8,7 @@ import {
     getAllResidents,
     createSecurityAccount
 } from '../controllers/userController'
+import { getReferralCode, getReferralStats } from '../controllers/referralController'
 import { authenticateToken, requireEstateAdmin } from '../middleware/auth'
 
 const router = Router()
@@ -28,6 +29,10 @@ const router = Router()
  */
 router.get('/profile', authenticateToken, getProfile)
 router.put('/profile', authenticateToken, updateProfile)
+
+// Referral Routes
+router.get('/me/referral-code', authenticateToken, getReferralCode)
+router.get('/me/referral-stats', authenticateToken, getReferralStats)
 
 // Estate Admin Routes
 

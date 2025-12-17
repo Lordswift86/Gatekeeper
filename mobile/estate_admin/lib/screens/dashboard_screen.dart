@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
+import 'login_screen.dart';
 import 'residents_screen.dart';
 import 'bills_screen.dart';
 import 'announcements_screen.dart';
@@ -79,7 +80,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed: () async {
               await EstateAdminApiClient.logout();
               if (!mounted) return;
-              Navigator.pushReplacementNamed(context, '/login');
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
             },
           ),
         ],

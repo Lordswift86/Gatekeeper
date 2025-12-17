@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { login, register, registerEstateAdmin, refreshToken, logout } from '../controllers/authController'
+import { login, register, registerEstateAdmin, refreshToken, logout, resetPassword } from '../controllers/authController'
 import { sendOTP, verifyOTP } from '../controllers/otpController'
 import { validate, schemas } from '../middleware/validate'
 
@@ -86,6 +86,9 @@ router.post('/register-estate-admin', validate(schemas.registerEstateAdmin), reg
 // OTP routes
 router.post('/send-otp', sendOTP) // Consider adding schema for this too
 router.post('/verify-otp', verifyOTP)
+
+// Password reset route
+router.post('/reset-password', resetPassword)
 
 export default router
 

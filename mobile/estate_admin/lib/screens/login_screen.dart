@@ -65,18 +65,20 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
-        child: Center(
+        child: SafeArea(
           child: Card(
-            margin: const EdgeInsets.all(32),
-            elevation: 8,
+            margin: EdgeInsets.zero,
+            elevation: 0,
+            shape: const RoundedRectangleBorder(),
             child: Container(
-              constraints: const BoxConstraints(maxWidth: 400),
+              width: double.infinity,
+              height: double.infinity,
               padding: const EdgeInsets.all(32),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Icon(
                       Icons.admin_panel_settings,

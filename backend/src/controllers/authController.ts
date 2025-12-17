@@ -56,3 +56,22 @@ export const logout = async (req: Request, res: Response) => {
         res.status(200).json({ message: 'Logged out successfully' }) // Always return success for logout
     }
 }
+
+export const resetPassword = async (req: Request, res: Response) => {
+    try {
+        const { phone, newPassword } = req.body
+
+        if (!phone || !newPassword) {
+            return res.status(400).json({ message: 'Phone and new password are required' })
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters' })
+        }
+
+        await AuthService.resetPassword(phone, newPassword)
+        res.json({ message: 'Password reset successfully' })
+    } catch (error: any) {
+        res.status(400).json({ message: error.message || 'Password reset failed' })
+    }
+}

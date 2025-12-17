@@ -156,7 +156,7 @@ export const AuthService = {
     },
 
     async registerEstateAdmin(data: {
-        user: { name: string; phone: string; password: string; email?: string };
+        user: { name: string; phone: string; password: string; email?: string; referralCode?: string };
         estate: { name: string; address?: string; description?: string };
     }) {
         const { user: userData, estate: estateData } = data
@@ -219,6 +219,17 @@ export const AuthService = {
             }
         })
 
+        // Link to referrer if referral code provided
+        if (userData.referralCode) {
+            try {
+                const { ReferralService } = require('./referralService')
+                await ReferralService.linkReferral(user.id, userData.referralCode)
+            } catch (error) {
+                // Don't fail registration if referral linking fails
+                console.warn('Referral linking failed:', error)
+            }
+        }
+
         const { password: _, ...userWithoutPassword } = user
 
         return {
@@ -227,5 +238,26 @@ export const AuthService = {
             status: 'PENDING',
             user: userWithoutPassword
         }
+    },
+
+    async resetPassword(phone: string, newPassword: string) {
+        // Format phone number
+        const { OTPService } = require('./smsService')
+        const formattedPhone = OTPService.formatPhone(phone)
+
+        // Find user by phone
+        const user = await prisma.user.findUnique({ where: { phone: formattedPhone } })
+        if (!user) {
+            throw new Error('User not found')
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 12)
+
+        // Update password
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { password: hashedPassword }
+        })
     }
 }

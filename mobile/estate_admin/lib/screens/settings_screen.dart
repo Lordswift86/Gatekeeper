@@ -50,6 +50,84 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
 
+          // Referral Section
+          Card(
+            margin: const EdgeInsets.all(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Referrals', style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 16),
+                  FutureBuilder<Map<String, dynamic>>(
+                    future: EstateAdminApiClient.getReferralStats(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Text('Error loading referrals');
+                      }
+                      if (!snapshot.hasData) {
+                        return const CircularProgressIndicator();
+                      }
+                      
+                      final stats = snapshot.data!;
+                      final referralCode = stats['referralCode'] ?? 'N/A';
+                      final totalReferrals = stats['totalReferrals'] ?? 0;
+                      
+                      return Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.blue.shade200),
+                            ),
+                            child: Column(
+                              children: [
+                                const Text('Your Referral Code', style: TextStyle(fontSize: 12)),
+                                const SizedBox(height: 8),
+                                Text(
+                                  referralCode,
+                                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    // Share referral code
+                                    final message = 'Join Estate Admin with my referral code: $referralCode!\nDownload the app at: [App Link]';
+                                    // On mobile, you'd use share_plus package: Share.share(message)
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Code copied: $referralCode')),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.share),
+                                  label: const Text('Share Code'),
+                                ),
+                             ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Column(
+                                children: [
+                                  Text('$totalReferrals', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                                  const Text('Total Referrals', style: TextStyle(fontSize: 12)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           // Admin Actions (only visible to Estate Admin)
           if (isEstateAdmin) ...[
             const Padding(
