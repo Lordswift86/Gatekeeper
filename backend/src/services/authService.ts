@@ -39,6 +39,11 @@ export const AuthService = {
         const isValid = await bcrypt.compare(passwordPlain, user.password)
         if (!isValid) throw new Error('Invalid credentials')
 
+        // Check if user is approved (for RESIDENT and SECURITY roles)
+        if (!user.isApproved && (user.role === 'RESIDENT' || user.role === 'SECURITY')) {
+            throw new Error('Account pending approval. Please contact your estate administrator.')
+        }
+
         // Generate tokens
         const accessToken = this.generateAccessToken(user)
         const refreshToken = await this.generateRefreshToken(user.id)
