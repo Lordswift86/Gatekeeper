@@ -14,7 +14,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
-  final _passwordController = TextEditingController(text: 'password123');
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -99,6 +99,28 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       obscureText: true,
                       onSubmitted: (_) => _login(),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          // TODO: Implement forgot password
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Reset Password'),
+                              content: const Text('Please contact support to reset your password.'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('OK'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        child: const Text('Forgot Password?'),
+                      ),
                     ),
                     if (_errorMessage != null) ...[
                       const SizedBox(height: 16),
