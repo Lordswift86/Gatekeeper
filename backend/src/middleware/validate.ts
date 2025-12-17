@@ -35,8 +35,12 @@ export const validate = <T>(schema: ZodSchema<T>, source: 'body' | 'query' | 'pa
 export const schemas = {
     // Auth schemas
     login: z.object({
-        identifier: z.string().min(1, 'Email or phone number is required'), // Can be email or phone
+        identifier: z.string().optional(), // Web dashboard sends this
+        phone: z.string().optional(),      // Mobile apps send this
+        email: z.string().optional(),      // Some may send this
         password: z.string().min(1, 'Password is required')
+    }).refine(data => data.identifier || data.phone || data.email, {
+        message: 'Email, phone, or identifier is required'
     }),
 
     register: z.object({
