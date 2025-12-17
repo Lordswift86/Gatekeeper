@@ -3,6 +3,7 @@ import '../services/api_client.dart';
 import '../widgets/phone_input.dart';
 import 'dashboard_screen.dart';
 import 'registration_screen.dart';
+import '../services/biometric_auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,9 +19,40 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
+  bool _canCheckBiometrics = false;
 
-  Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometricAvailability();
+    _checkSavedCredentials();
+  }
+
+  Future<void> _checkBiometricAvailability() async {
+    final isAvailable = await BiometricAuthService.isBiometricAvailable();
+    setState(() {
+      _canCheckBiometrics = isAvailable;
+    });
+  }
+
+  Future<void> _checkSavedCredentials() async {
+    final credentials = await BiometricAuthService.getSavedCredentials();
+    if (credentials != null && await BiometricAuthService.isBiometricEnabled()) {
+      _authenticateWithBiometrics(credentials['phone']!, credentials['password']!);
+    }
+  }
+
+  Future<void> _authenticateWithBiometrics(String phone, String password) async {
+    final authenticated = await BiometricAuthService.authenticateWithBiometrics();
+    if (authenticated) {
+      _phoneController.text = phone;
+      _passwordController.text = password;
+      _login(isBiometric: true);
+    }
+  }
+
+  Future<void> _login({bool isBiometric = false}) async {
+    if (!isBiometric && !_formKey.currentState!.validate()) return;
 
     setState(() {
       _isLoading = true;
@@ -34,6 +66,40 @@ class _LoginScreenState extends State<LoginScreen> {
         phone,
         _passwordController.text,
       );
+
+      // Save credentials if login successful (and not already using biometrics)
+      if (!isBiometric && _canCheckBiometrics) {
+        // Ask user if they want to enable biometric login if not enabled
+        if (!await BiometricAuthService.isBiometricEnabled()) {
+             if (mounted) {
+              final enable = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Enable Biometric Login?'),
+                  content: const Text('Would you like to use FaceID/TouchID for future logins?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('No'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Yes'),
+                    ),
+                  ],
+                ),
+              );
+              
+              if (enable == true) {
+                await BiometricAuthService.saveCredentials(
+                  phone: phone,
+                  password: _passwordController.text,
+                  enableBiometric: true,
+                );
+              }
+             }
+        }
+      }
 
       if (!mounted) return;
 
@@ -162,6 +228,25 @@ class _LoginScreenState extends State<LoginScreen> {
                             )
                           : const Text('Login'),
                     ),
+                    if (_canCheckBiometrics) ...[
+                      const SizedBox(height: 16),
+                      Center(
+                        child: IconButton(
+                          icon: const Icon(Icons.fingerprint, size: 48),
+                          color: Theme.of(context).colorScheme.primary,
+                          onPressed: () async {
+                             final credentials = await BiometricAuthService.getSavedCredentials();
+                             if (credentials != null) {
+                               _authenticateWithBiometrics(credentials['phone']!, credentials['password']!);
+                             } else {
+                               ScaffoldMessenger.of(context).showSnackBar(
+                                 const SnackBar(content: Text('No saved credentials found. Please login securely first.')),
+                               );
+                             }
+                          },
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     OutlinedButton(
                       onPressed: () {

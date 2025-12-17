@@ -14,7 +14,7 @@ class BiometricAuthService {
     try {
       final isAvailable = await _localAuth.canCheckBiometrics;
       final isDeviceSupported = await _localAuth.isDeviceSupported();
-      return isAvailable && isDeviceSupported;
+      return isAvailable || isDeviceSupported;
     } catch (e) {
       return false;
     }
