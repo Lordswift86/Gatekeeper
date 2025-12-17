@@ -48,6 +48,20 @@ export const schemas = {
         unitNumber: z.string().optional()
     }),
 
+    registerEstateAdmin: z.object({
+        user: z.object({
+            name: z.string().min(2, 'Name must be at least 2 characters'),
+            phone: z.string().min(10, 'Phone number is required'),
+            password: z.string().min(6, 'Password must be at least 6 characters'),
+            email: z.string().email('Invalid email format').optional()
+        }),
+        estate: z.object({
+            name: z.string().min(2, 'Estate name must be at least 2 characters'),
+            address: z.string().optional(),
+            description: z.string().optional()
+        })
+    }),
+
     // Pass schemas
     createPass: z.object({
         guestName: z.string().min(1, 'Guest name is required'),

@@ -81,7 +81,7 @@ router.post('/logout', logout)
  *         description: Registration successful
  */
 router.post('/register', validate(schemas.register), register)
-router.post('/register-estate-admin', validate(schemas.register), registerEstateAdmin) // Reusing register schema for now as it's similar enough or create strict one
+router.post('/register-estate-admin', validate(schemas.registerEstateAdmin), registerEstateAdmin)
 
 // OTP routes
 router.post('/send-otp', sendOTP) // Consider adding schema for this too
