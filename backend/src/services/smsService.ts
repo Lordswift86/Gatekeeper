@@ -195,6 +195,9 @@ export const OTPService = {
             data: { verified: true }
         })
 
+        // IMPORTANT: Also update the User record
+        await this.completePhoneVerification(phone)
+
         return true
     },
 
