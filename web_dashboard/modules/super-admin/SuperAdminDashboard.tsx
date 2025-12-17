@@ -35,7 +35,59 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
     const [adTargetUrl, setAdTargetUrl] = useState('');
     const [adActive, setAdActive] = useState(true);
 
-    // ... (keep previous code)
+    // Estate Residents Modal
+    const [selectedEstateId, setSelectedEstateId] = useState<string | null>(null);
+    const [estateResidents, setEstateResidents] = useState<User[]>([]);
+    const [loadingResidents, setLoadingResidents] = useState(false);
+
+    useEffect(() => {
+        refreshData();
+    }, [currentView]);
+
+    const refreshData = async () => {
+        setIsLoading(true);
+        try {
+            const [estatesData, usersData, adsData, logsData] = await Promise.all([
+                api.getAllEstates(),
+                api.getAllUsers?.() || Promise.resolve([]),
+                api.getGlobalAds(),
+                api.getSystemLogs?.() || Promise.resolve([])
+            ]);
+
+            setEstates(estatesData);
+            setAllUsers(usersData);
+            setAds(adsData);
+            setLogs(logsData);
+        } catch (error) {
+            console.error('Failed to load data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Estate Actions
+    const toggleStatus = async (id: string) => {
+        try {
+            await api.toggleEstateStatus(id);
+            await refreshData();
+        } catch (error) {
+            console.error('Failed to toggle status:', error);
+        }
+    };
+
+    const handleCreateEstate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await api.createEstate({ name: newName, code: newCode, tier: newTier });
+            setIsCreatingEstate(false);
+            setNewName('');
+            setNewCode('');
+            setNewTier(SubscriptionTier.FREE);
+            await refreshData();
+        } catch (error) {
+            console.error('Failed to create estate:', error);
+        }
+    };
 
     // Ad Actions
     const handleSubmitAd = async (e: React.FormEvent) => {
@@ -69,6 +121,36 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
         setAdContent('');
         setAdTargetUrl('');
         setAdActive(true);
+    };
+
+    const handleDeleteAd = async (adId: string) => {
+        if (window.confirm("Delete this ad campaign?")) {
+            try {
+                await api.deleteGlobalAd(adId);
+                await refreshData();
+            } catch (error) {
+                console.error('Failed to delete ad:', error);
+            }
+        }
+    };
+
+    // View Estate Residents
+    const handleViewEstateResidents = async (estateId: string) => {
+        setSelectedEstateId(estateId);
+        setLoadingResidents(true);
+        try {
+            const residents = allUsers.filter(u => u.estateId === estateId);
+            setEstateResidents(residents);
+        } catch (error) {
+            console.error('Failed to load residents:', error);
+        } finally {
+            setLoadingResidents(false);
+        }
+    };
+
+    const closeResidentsModal = () => {
+        setSelectedEstateId(null);
+        setEstateResidents([]);
     };
 
     // ... (keep previous code)
