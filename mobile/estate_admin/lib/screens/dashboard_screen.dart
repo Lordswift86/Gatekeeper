@@ -174,48 +174,56 @@ class _DashboardHome extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             
-            // Stats Grid
-            GridView.count(
-              crossAxisCount: 4,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.5,
-              children: [
-                _StatCard(
-                  title: 'Total Residents',
-                  value: totalResidents.toString(),
-                  icon: Icons.people,
-                  color: Colors.blue,
-                  trend: '+${pendingResidents} pending',
-                  trendColor: Colors.orange,
-                ),
-                _StatCard(
-                  title: 'Active Passes',
-                  value: activePasses.toString(),
-                  icon: Icons.badge,
-                  color: Colors.green,
-                  trend: 'Today\'s visitors: $visitorCount',
-                  trendColor: Colors.green,
-                ),
-                _StatCard(
-                  title: 'Bills Collection',
-                  value: '₦${_formatAmount(totalRevenue)}',
-                  icon: Icons.monetization_on,
-                  color: Colors.purple,
-                  trend: '$paidBills paid, $unpaidBills unpaid',
-                  trendColor: unpaidBills > 0 ? Colors.red : Colors.green,
-                ),
-                _StatCard(
-                  title: 'Pending Actions',
-                  value: (pendingResidents + unpaidBills).toString(),
-                  icon: Icons.pending_actions,
-                  color: Colors.orange,
-                  trend: 'Requires attention',
-                  trendColor: Colors.orange,
-                ),
-              ],
+            // Stats Grid - Responsive
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Calculate responsive columns based on width
+                final crossAxisCount = constraints.maxWidth > 1200 ? 4 : 
+                                       constraints.maxWidth > 800 ? 3 : 
+                                       constraints.maxWidth > 500 ? 2 : 1;
+                return GridView.count(
+                  crossAxisCount: crossAxisCount,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 1.4,
+                  children: [
+                    _StatCard(
+                      title: 'Total Residents',
+                      value: totalResidents.toString(),
+                      icon: Icons.people,
+                      color: Colors.blue,
+                      trend: '+${pendingResidents} pending',
+                      trendColor: Colors.orange,
+                    ),
+                    _StatCard(
+                      title: 'Active Passes',
+                      value: activePasses.toString(),
+                      icon: Icons.badge,
+                      color: Colors.green,
+                      trend: 'Today\'s visitors: $visitorCount',
+                      trendColor: Colors.green,
+                    ),
+                    _StatCard(
+                      title: 'Bills Collection',
+                      value: '₦${_formatAmount(totalRevenue)}',
+                      icon: Icons.monetization_on,
+                      color: Colors.purple,
+                      trend: '$paidBills paid, $unpaidBills unpaid',
+                      trendColor: unpaidBills > 0 ? Colors.red : Colors.green,
+                    ),
+                    _StatCard(
+                      title: 'Pending Actions',
+                      value: (pendingResidents + unpaidBills).toString(),
+                      icon: Icons.pending_actions,
+                      color: Colors.orange,
+                      trend: 'Requires attention',
+                      trendColor: Colors.orange,
+                    ),
+                  ],
+                );
+              },
             ),
             
             const SizedBox(height: 32),
@@ -387,7 +395,11 @@ class _StatCard extends StatelessWidget {
             ),
             const Spacer(),
             Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-            Text(title, style: Theme.of(context).textTheme.bodySmall),
+            Text(title, 
+              style: Theme.of(context).textTheme.bodySmall,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
             if (trend != null) ...[
               const SizedBox(height: 4),
               Text(trend!, style: TextStyle(fontSize: 11, color: trendColor ?? Colors.grey)),
@@ -415,7 +427,11 @@ class _ChartCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            Text(title, 
+              style: Theme.of(context).textTheme.titleMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: 16),
             SizedBox(height: 150, child: child),
           ],
