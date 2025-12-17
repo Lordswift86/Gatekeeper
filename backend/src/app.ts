@@ -60,6 +60,7 @@ import globalAdRoutes from './routes/globalAdRoutes'
 import uploadRoutes from './routes/uploadRoutes';
 import householdRoutes from './routes/householdRoutes';
 import estateAdminRoutes from './routes/estateAdminRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 // Swagger Imports
 import swaggerUi from 'swagger-ui-express'
@@ -77,6 +78,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/household', householdRoutes);
 app.use('/api/estate-admin', estateAdminRoutes);
 app.use('/api/admin/global-ads', globalAdRoutes)
+app.use('/api/admin', adminRoutes)
 
 // Swagger Setup
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
