@@ -17,6 +17,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   int _currentStep = 0;
   bool _isLoading = false;
   bool _phoneVerified = false;
+  bool _obscurePassword = true;
 
   // Generic User fields
   // Note: Residents register with Email (per schema), Admins with Phone (per existing app).
@@ -31,7 +32,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   // Let's stick to what the endpoints expect.
   
   final _phoneController = TextEditingController(); // Used for Admin
-  final _emailController = TextEditingController(); // Used for Resident
+  final _emailController = TextEditingController(); // Optional for both Resident and Estate Admin
   final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -115,8 +116,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   Future<void> _submitRegistration() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // OTP check only for Estate Admin (if we stick to existing flow)
-    if (!isResident && !_phoneVerified) {
+    // OTP check required for ALL roles now (Resident & Estate Admin)
+    if (!_phoneVerified) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please verify your phone number first')),
       );
@@ -129,9 +130,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       Map<String, dynamic> result;
 
       if (isResident) {
+        final phone = formatPhoneForAPI(_phoneController.text);
          result = await ApiClient.register(
            name: _nameController.text.trim(),
-           email: _emailController.text.trim(),
+           phone: phone,
+           email: _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : null,
            password: _passwordController.text,
            role: UserRole.resident.apiValue,
            estateCode: _estateCodeController.text.trim(),
@@ -139,10 +142,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
          );
       } else {
         final phone = formatPhoneForAPI(_phoneController.text);
+        final email = _emailController.text.trim();
         result = await ApiClient.registerEstateAdmin(
           user: {
             'phone': phone,
             'name': _nameController.text.trim(),
+            if (email.isNotEmpty) 'email': email,
             'password': _passwordController.text,
           },
           estate: {
@@ -229,35 +234,37 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (!isResident) ...[
-             PhoneNumberField(
-                controller: _phoneController,
-                enabled: !_phoneVerified,
+          // Phone & OTP (Now Common)
+           PhoneNumberField(
+              controller: _phoneController,
+              enabled: !_phoneVerified,
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: _phoneVerified || _isLoading ? null : _sendOTP,
+              icon: Icon(_phoneVerified ? Icons.check_circle : Icons.sms),
+              label: Text(_phoneVerified
+                  ? 'Phone Verified ✓'
+                  : 'Send Verification Code'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    _phoneVerified ? Colors.green : Colors.blue,
               ),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: _phoneVerified || _isLoading ? null : _sendOTP,
-                icon: Icon(_phoneVerified ? Icons.check_circle : Icons.sms),
-                label: Text(_phoneVerified
-                    ? 'Phone Verified ✓'
-                    : 'Send Verification Code'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      _phoneVerified ? Colors.green : Colors.blue,
-                ),
+            ),
+            
+           const SizedBox(height: 16),
+           
+           // Email Field (Now Common)
+           TextFormField(
+              controller: _emailController,
+              decoration: const InputDecoration(
+                labelText: 'Email Address (Optional)',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.email),
               ),
-          ] else ...[
-             TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (v) => v?.contains('@') ?? false ? null : 'Invalid email',
-              ),
-          ],
+              keyboardType: TextInputType.emailAddress,
+              validator: (v) => v != null && v.isNotEmpty && !v.contains('@') ? 'Invalid email' : null,
+            ),
           
           const SizedBox(height: 16),
           TextFormField(
@@ -272,12 +279,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _passwordController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Password',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.lock),
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.lock),
+              suffixIcon: IconButton(
+                icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              ),
             ),
-            obscureText: true,
+            obscureText: _obscurePassword,
             validator: (v) {
               if (v?.isEmpty ?? true) return 'Required';
               if (v!.length < 6) return 'Min 6 characters';
@@ -357,7 +368,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(isResident ? 'Resident Registration' : 'Estate Admin Registration'),
+        title: Text(isResident ? 'Resident Registration (Unified)' : 'Estate Admin Registration (Unified)'),
       ),
       body: Form(
         key: _formKey,
@@ -374,16 +385,20 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               // Usually Stepper form validation is tricky.
               // Let's do partial validation if needed or just simple check.
               
-              if (_currentStep == 0) {
+               if (_currentStep == 0) {
+                 // Common validation
                  if (_nameController.text.isEmpty || _passwordController.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
                     return;
                  }
-                 if (!isResident && !_phoneVerified) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please verify phone')));
+                 if (!_phoneVerified) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please verify phone number')));
                     return;
                  }
-                 if (isResident && (_emailController.text.isEmpty || !_emailController.text.contains('@'))) {
+                 // Email optional/required? User said "add an email field". Let's make it optional effectively or validate if present? 
+                 // If we made it required in backend (previous thought was optional), then require here.
+                 // Backend validate.ts: email is OPTIONAL.
+                 if (_emailController.text.isNotEmpty && !_emailController.text.contains('@')) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid email')));
                     return;
                  }

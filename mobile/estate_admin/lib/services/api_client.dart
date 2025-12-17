@@ -1,4 +1,5 @@
 import 'api_service.dart';
+import '../models/user.dart';
 import '../modules/resident/models/pass.dart';
 import '../modules/resident/models/bill.dart';
 
@@ -70,24 +71,27 @@ class ApiClient {
 
   static Future<Map<String, dynamic>> register({
     required String name,
-    required String email,
+    required String phone,
+    String? email, // Keeping email as it was, as replacing it with 'phone' would cause a duplicate parameter.
     required String password,
     required String role,
     required String estateCode,
-    required String unitNumber,
+    String? unitNumber,
   }) async {
     final response = await ApiService.post(
       '/auth/register',
       {
         'name': name,
-        'email': email,
+        'phone': phone,
+        if (email != null) 'email': email,
         'password': password,
         'role': role,
         'estateCode': estateCode,
-        'unitNumber': unitNumber,
+        if (unitNumber != null) 'unitNumber': unitNumber,
       },
       requiresAuth: false,
     );
+    
     return response;
   }
   
@@ -381,5 +385,12 @@ class ApiClient {
       'notes': notes,
     });
     return response;
+  }
+
+  // ============= Global Ads =============
+
+  static Future<List<dynamic>> getGlobalAds() async {
+    final response = await ApiService.get('/admin/global-ads');
+    return response as List;
   }
 }

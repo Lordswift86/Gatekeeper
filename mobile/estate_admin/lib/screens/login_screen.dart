@@ -280,7 +280,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.all(16),
                       ),
-                      child: const Text('Register new account'),
+                      child: const Text('Register new account (Unified)'),
                     ),
                   ],
                 ),

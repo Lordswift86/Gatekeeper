@@ -32,11 +32,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _isLoading = true);
     
     try {
-      final user = await ApiClient.getProfile();
+      final userMap = await ApiClient.getProfile();
       final passes = await ApiClient.getUserPasses();
       
       setState(() {
-        _user = user;
+        _user = User.fromJson(userMap);
         _activePasses = passes
             .where((p) => p.status == PassStatus.ACTIVE || p.status == PassStatus.CHECKED_IN)
             .toList();

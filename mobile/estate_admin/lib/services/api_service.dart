@@ -112,8 +112,21 @@ class ApiService {
       return jsonDecode(response.body);
     } else if (response.statusCode == 401) {
       clearToken(); // Clear invalid token
-      throw Exception('Unauthorized. Please login again.');
-    } else {
+      
+      // Try to parse the specific error message from backend
+      try {
+        if (response.body.isNotEmpty) {
+          final body = jsonDecode(response.body);
+          if (body['message'] != null) {
+            throw Exception(body['message']);
+          }
+        }
+      } catch (_) {
+        // Fallback if parsing fails
+      }
+      
+      
+      throw Exception('Unauthorized: ${response.body}');
       final errorBody = response.body.isNotEmpty 
           ? jsonDecode(response.body) 
           : {'message': 'Unknown error'};
