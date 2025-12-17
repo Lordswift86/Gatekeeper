@@ -153,7 +153,178 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
         setEstateResidents([]);
     };
 
-    // ... (keep previous code)
+    // --- OVERVIEW VIEW ---
+    if (currentView === 'overview') {
+        return (
+            <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Platform Overview</h2>
+                        <p className="text-slate-500 dark:text-slate-400">Super Admin Console</p>
+                    </div>
+                    <Button variant="secondary" className="gap-2" onClick={refreshData} disabled={isLoading}>
+                        <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} /> Refresh
+                    </Button>
+                </div>
+
+                {/* Global Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card>
+                        <CardBody className="flex items-center gap-4">
+                            <div className="p-3 rounded-lg bg-indigo-500 text-white">
+                                <Building2 size={24} />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Active Estates</p>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.totalEstates}</p>
+                            </div>
+                        </CardBody>
+                    </Card>
+                    <Card>
+                        <CardBody className="flex items-center gap-4">
+                            <div className="p-3 rounded-lg bg-pink-500 text-white">
+                                <Users size={24} />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Total Users</p>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.totalUsers}</p>
+                            </div>
+                        </CardBody>
+                    </Card>
+                    <Card>
+                        <CardBody className="flex items-center gap-4">
+                            <div className="p-3 rounded-lg bg-orange-500 text-white">
+                                <TrendingUp size={24} />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Ad Impressions</p>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.adImpressions.toLocaleString()}</p>
+                            </div>
+                        </CardBody>
+                    </Card>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
+                        <CardHeader title="Recent Activity" />
+                        <div className="p-0">
+                            <table className="w-full text-sm text-left">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {logs.slice(0, 5).map(log => (
+                                        <tr key={log.id}>
+                                            <td className="px-6 py-4">
+                                                <p className="font-bold text-slate-800 dark:text-white">{log.action}</p>
+                                                <p className="text-xs text-slate-500">{new Date(log.timestamp).toLocaleString()}</p>
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-300 text-sm">
+                                                {log.details}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+
+                    <Card>
+                        <CardHeader title="System Health" />
+                        <CardBody>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">API Status</span>
+                                    <span className="text-green-500 font-bold text-sm">Online</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Database</span>
+                                    <span className="text-green-500 font-bold text-sm">Connected</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">WebSocket</span>
+                                    <span className="text-green-500 font-bold text-sm">Active</span>
+                                </div>
+                            </div>
+                        </CardBody>
+                    </Card>
+                </div>
+            </div>
+        );
+    }
+
+    // --- USERS VIEW ---
+    if (currentView === 'users') {
+        const filteredUsers = allUsers.filter(u =>
+            u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+            u.email.includes(userSearch)
+        );
+
+        return (
+            <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Global User Management</h2>
+                        <p className="text-slate-500 dark:text-slate-400">Manage access across all tenants</p>
+                    </div>
+                </div>
+
+                <Card>
+                    <CardHeader title="All Users" />
+                    <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                        <div className="relative max-w-md">
+                            <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                            <input
+                                className="w-full pl-10 p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                                placeholder="Search by name or email..."
+                                value={userSearch}
+                                onChange={e => setUserSearch(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                                <tr>
+                                    <th className="px-6 py-3">Name</th>
+                                    <th className="px-6 py-3">Role</th>
+                                    <th className="px-6 py-3">Estate</th>
+                                    <th className="px-6 py-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {filteredUsers.map(u => {
+                                    const userEstate = estates.find(e => e.id === u.estateId);
+                                    return (
+                                        <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                            <td className="px-6 py-4">
+                                                <p className="font-bold text-slate-900 dark:text-white">{u.name}</p>
+                                                <p className="text-xs text-slate-500">{u.email}</p>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700">
+                                                    {u.role.replace('_', ' ')}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                                                {userEstate ? userEstate.name : (u.role === 'SUPER_ADMIN' ? 'Global' : 'N/A')}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {u.isApproved ? (
+                                                    <span className="text-green-600 font-bold text-xs flex items-center gap-1">
+                                                        <BadgeCheck size={12} /> Approved
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-orange-500 font-bold text-xs">Pending</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
+            </div>
+        );
+    }
 
     // --- ADS VIEW ---
     if (currentView === 'ads') {
