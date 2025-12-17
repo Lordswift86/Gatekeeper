@@ -25,12 +25,21 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
 
     jwt.verify(token, secret, (err: any, user: any) => {
         if (err) {
-            console.error('JWT Verification Error:', err.name, err.message);
+            console.error('[AUTH] JWT Verification Error:', {
+                name: err.name,
+                message: err.message,
+                token: token.substring(0, 20) + '...'
+            });
             if (err.name === 'TokenExpiredError') {
                 return next(ApiError.unauthorized('Token has expired'))
             }
             return next(ApiError.forbidden('Invalid token'))
         }
+        console.log('[AUTH] Token verified successfully:', {
+            userId: user.userId,
+            role: user.role,
+            estateId: user.estateId
+        });
         req.user = user
         next()
     })
