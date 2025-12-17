@@ -9,12 +9,23 @@ const options: swaggerJsdoc.Options = {
             version: '1.0.0',
             description: 'API Documentation for the Gatekeeper Estate Management System',
         },
-        servers: [
-            {
-                url: 'http://localhost:3000',
-                description: 'Local Development Server',
-            },
-        ],
+        servers: process.env.NODE_ENV === 'production'
+            ? [
+                {
+                    url: 'https://kitaniz.cloud/api',
+                    description: 'Production Server',
+                },
+            ]
+            : [
+                {
+                    url: 'http://localhost:3000/api',
+                    description: 'Local Development Server',
+                },
+                {
+                    url: 'https://kitaniz.cloud/api',
+                    description: 'Production Server',
+                },
+            ],
         components: {
             securitySchemes: {
                 bearerAuth: {
