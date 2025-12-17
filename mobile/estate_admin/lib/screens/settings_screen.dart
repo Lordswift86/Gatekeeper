@@ -61,7 +61,7 @@ class SettingsScreen extends StatelessWidget {
                   Text('Referrals', style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 16),
                   FutureBuilder<Map<String, dynamic>>(
-                    future: EstateAdminApiClient.getReferralStats(),
+                    future: ApiClient.getReferralStats(),
                     builder: (context, snapshot) {
                       if (snapshot.hasError) {
                         return Text('Error loading referrals');
@@ -147,7 +147,7 @@ class SettingsScreen extends StatelessWidget {
 
                 if (result == true && context.mounted) {
                   // Admin was transferred, logout user
-                  await EstateAdminApiClient.logout();
+                  await ApiClient.logout();
                   if (context.mounted) {
                     Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                   }
@@ -167,7 +167,7 @@ class SettingsScreen extends StatelessWidget {
               leading: const Icon(Icons.phone_in_talk, color: Colors.green),
               title: const Text('Security Contact'),
               subtitle: FutureBuilder<Map<String, dynamic>>(
-                future: EstateAdminApiClient.getEstate(user['estateId'] ?? ''),
+                future: ApiClient.getEstate(user['estateId'] ?? ''),
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
                     final phone = snapshot.data!['securityPhone'] ?? 'Not configured';
@@ -196,7 +196,7 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Logout', style: TextStyle(color: Colors.red)),
             onTap: () async {
-              await EstateAdminApiClient.logout();
+              await ApiClient.logout();
               if (context.mounted) {
                 Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
               }
@@ -213,7 +213,7 @@ class SettingsScreen extends StatelessWidget {
     // Fetch current value first
     String currentPhone = '';
     try {
-      final estate = await EstateAdminApiClient.getEstate(estateId);
+      final estate = await ApiClient.getEstate(estateId);
       currentPhone = estate['securityPhone'] ?? '';
     } catch (_) {}
 
@@ -256,7 +256,7 @@ class SettingsScreen extends StatelessWidget {
 
     if (result != null && context.mounted) {
       try {
-        await EstateAdminApiClient.updateEstate(estateId, {'securityPhone': result});
+        await ApiClient.updateEstate(estateId, {'securityPhone': result});
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Settings saved successfully')),

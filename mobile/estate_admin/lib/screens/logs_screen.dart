@@ -22,7 +22,7 @@ class _LogsScreenState extends State<LogsScreen> {
   Future<void> _loadLogs() async {
     setState(() => _isLoading = true);
     try {
-      final logs = await EstateAdminApiClient.getEstateLogs();
+      final logs = await ApiClient.getEstateLogs();
       setState(() {
         _logs = logs;
         _isLoading = false;
@@ -95,7 +95,7 @@ class _LogsScreenState extends State<LogsScreen> {
             onPressed: () async {
               if (nameController.text.isEmpty || destController.text.isEmpty) return;
               try {
-                await EstateAdminApiClient.addManualLog(
+                await ApiClient.addManualLog(
                   guestName: nameController.text,
                   destination: destController.text,
                   notes: notesController.text.isEmpty ? null : notesController.text,

@@ -22,7 +22,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
   Future<void> _loadAnnouncements() async {
     setState(() => _isLoading = true);
     try {
-      final announcements = await EstateAdminApiClient.getAnnouncements();
+      final announcements = await ApiClient.getAnnouncements();
       setState(() {
         _announcements = announcements;
         _isLoading = false;
@@ -39,7 +39,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
 
   Future<void> _deleteAnnouncement(String id) async {
     try {
-      await EstateAdminApiClient.deleteAnnouncement(id);
+      await ApiClient.deleteAnnouncement(id);
       _loadAnnouncements();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -116,7 +116,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
             onPressed: () async {
               if (titleController.text.isEmpty || contentController.text.isEmpty) return;
               try {
-                await EstateAdminApiClient.createAnnouncement(
+                await ApiClient.createAnnouncement(
                   title: titleController.text,
                   content: contentController.text,
                 );

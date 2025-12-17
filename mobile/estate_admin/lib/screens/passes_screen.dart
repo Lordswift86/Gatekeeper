@@ -22,7 +22,7 @@ class _PassesScreenState extends State<PassesScreen> {
   Future<void> _loadPasses() async {
     setState(() => _isLoading = true);
     try {
-      final passes = await EstateAdminApiClient.getEstatePasses();
+      final passes = await ApiClient.getEstatePasses();
       setState(() {
         _passes = passes;
         _isLoading = false;

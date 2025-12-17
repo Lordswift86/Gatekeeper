@@ -30,7 +30,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadStats() async {
     try {
-      final stats = await EstateAdminApiClient.getEstateStats();
+      final stats = await ApiClient.getEstateStats();
       setState(() {
         _stats = stats;
         _isLoading = false;
@@ -78,7 +78,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await EstateAdminApiClient.logout();
+              await ApiClient.logout();
               if (!mounted) return;
               Navigator.pushReplacement(
                 context,

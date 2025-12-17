@@ -21,7 +21,7 @@ class _TransferAdminDialogState extends State<TransferAdminDialog> {
 
   Future<void> _loadResidents() async {
     try {
-      final residents = await EstateAdminApiClient.getAllResidents();
+      final residents = await ApiClient.getAllResidents();
       setState(() {
         _residents = residents;
         _isLoading = false;
@@ -63,7 +63,7 @@ class _TransferAdminDialogState extends State<TransferAdminDialog> {
     if (confirmed != true) return;
 
     try {
-      await EstateAdminApiClient.transferAdmin(_selectedUserId!);
+      await ApiClient.transferAdmin(_selectedUserId!);
       if (mounted) {
         Navigator.pop(context, true); // Close dialog with success
         ScaffoldMessenger.of(context).showSnackBar(

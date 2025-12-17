@@ -23,7 +23,7 @@ class _BillsScreenState extends State<BillsScreen> {
   Future<void> _loadBills() async {
     setState(() => _isLoading = true);
     try {
-      final bills = await EstateAdminApiClient.getEstateBills();
+      final bills = await ApiClient.getEstateBills();
       setState(() {
         _bills = bills;
         _isLoading = false;
@@ -127,7 +127,7 @@ class _CreateBillDialogState extends State<CreateBillDialog> {
 
   Future<void> _loadResidents() async {
     try {
-      final residents = await EstateAdminApiClient.getAllResidents();
+      final residents = await ApiClient.getAllResidents();
       if (mounted) {
         setState(() {
           _residents = residents;
@@ -147,7 +147,7 @@ class _CreateBillDialogState extends State<CreateBillDialog> {
     setState(() => _isLoading = true);
 
     try {
-      await EstateAdminApiClient.createBill(
+      await ApiClient.createBill(
         userId: _selectedResidentId!,
         type: _selectedType,
         amount: double.parse(_amountController.text),

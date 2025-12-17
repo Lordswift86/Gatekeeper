@@ -41,7 +41,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     
     try {
       final phone = formatPhoneForAPI(_phoneController.text);
-      await EstateAdminApiClient.sendOTP(phone, purpose: 'password_reset');
+      await ApiClient.sendOTP(phone, purpose: 'password_reset');
       
       setState(() {
         _currentStep = 1;
@@ -69,7 +69,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       final phone = formatPhoneForAPI(_phoneController.text);
       
       // Verify OTP first
-      final verified = await EstateAdminApiClient.verifyOTP(
+      final verified = await ApiClient.verifyOTP(
         phone,
         _otpController.text,
         purpose: 'password_reset',
@@ -84,7 +84,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       }
       
       // Reset password
-      await EstateAdminApiClient.resetPassword(phone, _passwordController.text);
+      await ApiClient.resetPassword(phone, _passwordController.text);
       
       setState(() {
         _successMessage = 'Password reset successfully!';

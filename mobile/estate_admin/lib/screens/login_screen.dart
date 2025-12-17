@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
 import '../widgets/phone_input.dart';
-import 'dashboard_screen.dart';
-import 'registration_screen.dart';
+import '../widgets/phone_input.dart';
+import 'dashboard_screen.dart' as admin;
+import '../modules/resident/screens/dashboard_screen.dart' as resident;
+import '../modules/security/screens/dashboard_screen.dart' as security;
+import 'role_selection_screen.dart';
 import '../services/biometric_auth_service.dart';
+import '../models/user_role.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -62,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final phone = formatPhoneForAPI(_phoneController.text);
       
-      final result = await EstateAdminApiClient.login(
+      final result = await ApiClient.login(
         phone,
         _passwordController.text,
       );
@@ -103,11 +107,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
+      final role = result['user']['role'];
+      Widget dashboard;
+      
+      switch (role) {
+        case 'RESIDENT':
+          dashboard = const resident.DashboardScreen();
+          break;
+        case 'SECURITY':
+          dashboard = const security.DashboardScreen();
+          break;
+        case 'ESTATE_ADMIN':
+        default:
+          dashboard = admin.DashboardScreen(user: result['user']);
+          break;
+      }
+
       // Navigate to dashboard
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => DashboardScreen(user: result['user']),
+          builder: (context) => dashboard,
+          settings: RouteSettings(arguments: result['user']),
         ),
       );
     } catch (e) {
@@ -252,13 +273,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const RegistrationScreen()),
+                          MaterialPageRoute(
+                              builder: (context) => const RoleSelectionScreen()),
                         );
                       },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.all(16),
                       ),
-                      child: const Text('Register New Estate'),
+                      child: const Text('Register new account'),
                     ),
                   ],
                 ),

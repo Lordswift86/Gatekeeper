@@ -23,8 +23,8 @@ class _ResidentsScreenState extends State<ResidentsScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final pending = await EstateAdminApiClient.getPendingResidents();
-      final all = await EstateAdminApiClient.getAllResidents();
+      final pending = await ApiClient.getPendingResidents();
+      final all = await ApiClient.getAllResidents();
       setState(() {
         _pendingResidents = pending;
         _allResidents = all;
@@ -37,7 +37,7 @@ class _ResidentsScreenState extends State<ResidentsScreen> {
 
   Future<void> _approveResident(String userId) async {
     try {
-      await EstateAdminApiClient.approveResident(userId);
+      await ApiClient.approveResident(userId);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Resident approved!')),
       );
@@ -65,7 +65,7 @@ class _ResidentsScreenState extends State<ResidentsScreen> {
     if (confirm != true) return;
 
     try {
-      await EstateAdminApiClient.rejectResident(userId);
+      await ApiClient.rejectResident(userId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Resident rejected/removed')),

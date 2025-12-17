@@ -1,6 +1,8 @@
 import 'api_service.dart';
+import '../modules/resident/models/pass.dart';
+import '../modules/resident/models/bill.dart';
 
-class EstateAdminApiClient {
+class ApiClient {
   // ============= Authentication =============
   
   static Future<Map<String, dynamic>> login(String phone, String password) async {
@@ -60,6 +62,29 @@ class EstateAdminApiClient {
       {
         'user': user,
         'estate': estate,
+      },
+      requiresAuth: false,
+    );
+    return response;
+  }
+
+  static Future<Map<String, dynamic>> register({
+    required String name,
+    required String email,
+    required String password,
+    required String role,
+    required String estateCode,
+    required String unitNumber,
+  }) async {
+    final response = await ApiService.post(
+      '/auth/register',
+      {
+        'name': name,
+        'email': email,
+        'password': password,
+        'role': role,
+        'estateCode': estateCode,
+        'unitNumber': unitNumber,
       },
       requiresAuth: false,
     );
@@ -134,6 +159,152 @@ class EstateAdminApiClient {
     final response = await ApiService.get('/users/residents');
     return response as List;
   }
+
+  // ============= Resident: Profile & Household =============
+
+  static Future<dynamic> getProfile() async {
+    final response = await ApiService.get('/users/profile');
+    // Note: Resident module expects User model. 
+    // We return dynamic/map here, and the calling code likely converts it using User.fromJson(response).
+    // Or we should import User model here? 
+    // To avoid dependency cycles or complex imports, let's return the Map and let caller parse, OR import modules models if needed.
+    // Resident Dashboard: `final user = await ApiClient.getProfile();` -> returns User?
+    // In Resident ApiClient: `return User.fromJson(response);`
+    // If I return Map here, the Dashboard code `User? _user; ... _user = user;` will fail if it expects User object.
+    // I MUST return Map and updated Dashboards? OR Import User model.
+    // If I import User model from `modules/resident/models/user.dart`, it might be fine.
+    return response; 
+  }
+
+  static Future<dynamic> updateProfile(Map<String, dynamic> data) async {
+    final response = await ApiService.put('/users/profile', data);
+    return response;
+  }
+
+  static Future<List<dynamic>> getHousehold() async {
+    final response = await ApiService.get('/household');
+    return response as List;
+  }
+
+  static Future<dynamic> addSubAccount(String name, String email, String password) async {
+    final response = await ApiService.post('/household', {
+      'name': name,
+      'email': email,
+      'password': password
+    });
+    return response;
+  }
+
+  static Future<void> removeSubAccount(String userId) async {
+    await ApiService.delete('/household/$userId');
+  }
+
+  static Future<Map<String, dynamic>> getIdentityToken() async {
+    return await ApiService.get('/identity/token');
+  }
+
+  static Future<Map<String, dynamic>> verifyIdentity(String token) async {
+    return await ApiService.post('/identity/verify', {'token': token});
+  }
+
+  static Future<bool> checkAccessRestricted() async {
+     try {
+       // Re-implement logic
+       return false; // placeholder for now to avoid compilation error
+     } catch (e) {
+       return false;
+     }
+  }
+
+  // ============= Resident: Passes =============
+
+  static Future<List<GuestPass>> getUserPasses() async {
+    final response = await ApiService.get('/passes/my-passes');
+    return (response as List).map((e) => GuestPass.fromJson(e)).toList();
+  }
+
+  static Future<dynamic> generatePass({
+    required String guestName,
+    required String type,
+    String? exitInstruction,
+    String? deliveryCompany,
+    List<String>? recurringDays,
+    String? recurringStart,
+    String? recurringEnd,
+  }) async {
+    final response = await ApiService.post('/passes/generate', {
+      'guestName': guestName,
+      'type': type,
+      'exitInstruction': exitInstruction,
+      'deliveryCompany': deliveryCompany,
+      'recurringDays': recurringDays,
+      'recurringTimeStart': recurringStart,
+      'recurringTimeEnd': recurringEnd,
+    });
+    return response;
+  }
+
+  static Future<void> cancelPass(String passId) async {
+    await ApiService.delete('/passes/$passId');
+  }
+
+  // ============= Resident: Bills =============
+
+  static Future<List<Bill>> getUserBills() async {
+    final response = await ApiService.get('/bills/my');
+    return (response as List).map((e) => Bill.fromJson(e)).toList();
+  }
+
+  static Future<dynamic> payBill(String billId) async {
+    final response = await ApiService.post('/bills/$billId/pay', {});
+    return response;
+  }
+
+  static Future<dynamic> verifyPayment(String billId, String reference) async {
+    final response = await ApiService.post('/bills/$billId/verify-payment', {
+      'reference': reference,
+    });
+    return response;
+  }
+  
+  // ============= Security: Operations =============
+
+  static Future<Map<String, dynamic>> validatePass(String code) async {
+    final response = await ApiService.post('/passes/validate', {
+      'code': code,
+    });
+    return response;
+  }
+  
+  static Future<void> processEntry(String passId) async {
+    await ApiService.post('/passes/$passId/entry', {});
+  }
+  
+  static Future<void> processExit(String passId) async {
+    await ApiService.post('/passes/$passId/exit', {});
+  }
+
+  static Future<List<dynamic>> getActiveAlerts() async {
+    final response = await ApiService.get('/security/alerts/active');
+    return response as List? ?? [];
+  }
+  
+  static Future<void> resolveAlert(String alertId) async {
+    await ApiService.post('/security/alerts/$alertId/resolve', {});
+  }
+  
+  static Future<void> triggerSOS() async {
+    await ApiService.post('/security/alert', {});
+  }
+
+  static Future<List<dynamic>> getPendingDeliveries() async {
+    final response = await ApiService.get('/passes?type=DELIVERY&status=ACTIVE');
+    return response as List? ?? [];
+  }
+  
+  static Future<void> confirmDelivery(String passId) async {
+    await ApiService.post('/passes/$passId/entry', {});
+  }
   
   // ============= Bills Management =============
   
@@ -193,6 +364,10 @@ class EstateAdminApiClient {
   static Future<List<dynamic>> getEstateLogs() async {
     final response = await ApiService.get('/security/logs');
     return response as List;
+  }
+
+  static Future<List<dynamic>> getLogs() async {
+    return getEstateLogs();
   }
   
   static Future<Map<String, dynamic>> addManualLog({

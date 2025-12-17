@@ -5,6 +5,14 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+configurations.all {
+    resolutionStrategy {
+        force "androidx.browser:browser:1.8.0"
+        force "androidx.core:core:1.13.1"
+        force "androidx.core:core-ktx:1.13.1"
+    }
+}
+
 android {
     namespace = "com.gatekeeper.gatekeeper_estate_admin_flutter"
     compileSdk = flutter.compileSdkVersion
