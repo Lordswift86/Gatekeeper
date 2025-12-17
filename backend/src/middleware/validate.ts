@@ -35,7 +35,7 @@ export const validate = <T>(schema: ZodSchema<T>, source: 'body' | 'query' | 'pa
 export const schemas = {
     // Auth schemas
     login: z.object({
-        email: z.string().email('Invalid email format'),
+        identifier: z.string().min(1, 'Email or phone number is required'), // Can be email or phone
         password: z.string().min(1, 'Password is required')
     }),
 
