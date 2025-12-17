@@ -1,5 +1,7 @@
 import { Request, Response } from 'express'
-import { prisma } from '../db'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 export const getPlatformStats = async (req: Request, res: Response) => {
     try {
@@ -9,7 +11,7 @@ export const getPlatformStats = async (req: Request, res: Response) => {
             prisma.globalAd.findMany({ where: { isActive: true } })
         ])
 
-        const adImpressions = globalAds.reduce((sum, ad) => sum + ad.impressions, 0)
+        const adImpressions = globalAds.reduce((sum: number, ad: any) => sum + ad.impressions, 0)
 
         res.json({
             totalEstates,
