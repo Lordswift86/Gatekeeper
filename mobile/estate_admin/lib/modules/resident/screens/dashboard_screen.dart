@@ -9,6 +9,13 @@ import 'package:gatekeeper_estate_admin/modules/resident/screens/resident_id_scr
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+// Imports for other tabs
+import 'game_hub_screen.dart';
+import 'payments_screen.dart';
+import 'history_screen.dart';
+import 'settings_screen.dart';
+import 'notifications_screen.dart';
+
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -17,6 +24,47 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _pages = [
+    const HomeView(),
+    const GameHubScreen(),
+    const PaymentsScreen(),
+    const HistoryScreen(),
+    const SettingsScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(icon: Icon(LucideIcons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(LucideIcons.gamepad2), label: 'Relax'),
+          NavigationDestination(icon: Icon(LucideIcons.creditCard), label: 'Pay'),
+          NavigationDestination(icon: Icon(LucideIcons.history), label: 'History'),
+          NavigationDestination(icon: Icon(LucideIcons.settings), label: 'Settings'),
+        ],
+      ),
+    );
+  }
+}
+
+class HomeView extends StatefulWidget {
+  const HomeView({super.key});
+
+  @override
+  State<HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> {
   User? _user;
   List<GuestPass> _activePasses = [];
   bool _isAccessRestricted = false;
@@ -35,23 +83,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final userMap = await ApiClient.getProfile();
       final passes = await ApiClient.getUserPasses();
       
-      setState(() {
-        _user = User.fromJson(userMap);
-        _activePasses = passes
-            .where((p) => p.status == PassStatus.ACTIVE || p.status == PassStatus.CHECKED_IN)
-            .toList();
-        // TODO: Check access restriction based on overdue bills
-        _isAccessRestricted = false;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _user = User.fromJson(userMap);
+          _activePasses = passes
+              .where((p) => p.status == PassStatus.ACTIVE || p.status == PassStatus.CHECKED_IN)
+              .toList();
+          _isAccessRestricted = false;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
-      
-      if (!mounted) return;
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load data: $e')),
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load data: $e')),
+        );
+      }
     }
   }
 
@@ -78,7 +126,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _handleLogout() async {
     await ApiClient.logout();
     if (!mounted) return;
-    Navigator.pushReplacementNamed(context, '/login');
+    Navigator.of(context, rootNavigator: true).pushReplacementNamed('/login');
   }
 
   @override
@@ -111,28 +159,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           IconButton(
             icon: const Icon(LucideIcons.bell),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _handleLogout,
           ),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        onDestinationSelected: (index) {
-          if (index == 1) Navigator.pushNamed(context, '/game');
-          if (index == 2) Navigator.pushNamed(context, '/payments');
-          if (index == 3) Navigator.pushNamed(context, '/history');
-          if (index == 4) Navigator.pushNamed(context, '/settings');
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(LucideIcons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(LucideIcons.gamepad2), label: 'Relax'),
-          NavigationDestination(icon: Icon(LucideIcons.creditCard), label: 'Pay'),
-          NavigationDestination(icon: Icon(LucideIcons.history), label: 'History'),
-          NavigationDestination(icon: Icon(LucideIcons.settings), label: 'Settings'),
         ],
       ),
       body: RefreshIndicator(

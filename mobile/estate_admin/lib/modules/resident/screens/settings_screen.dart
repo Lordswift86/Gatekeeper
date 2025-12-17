@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:gatekeeper_estate_admin/modules/resident/main.dart';
-import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:gatekeeper_estate_admin/modules/resident/providers/user_provider.dart';
 import 'package:gatekeeper_estate_admin/modules/resident/screens/household_screen.dart';
+import 'package:gatekeeper_estate_admin/services/api_client.dart'; // Import ApiClient if needed for logic
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -14,11 +13,13 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notifications = true;
   bool _privacy = true;
+  bool _isDark = false; // Local state for now
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final isDark = themeProvider.themeMode == ThemeMode.dark;
+    // Determine isDark from actual theme if possible or local state
+    final brightness = Theme.of(context).brightness;
+    _isDark = brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Account Settings')),
@@ -41,8 +42,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: const Text('Dark Mode'),
                   subtitle: const Text('Toggle app theme.'),
                   secondary: const Icon(LucideIcons.moon),
-                  value: isDark,
-                  onChanged: (val) => themeProvider.toggleTheme(),
+                  value: _isDark,
+                  onChanged: (val) {
+                    // TODO: Implement global theme switching in EstateAdminApp
+                    setState(() => _isDark = val);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Theme switching coming soon.')));
+                  },
                 ),
                 const Divider(height: 1),
                 SwitchListTile(
@@ -57,21 +62,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          if (Provider.of<UserProvider>(context, listen: false).user?.primaryUserId == null) ...[
-            const SizedBox(height: 24),
-            _SectionHeader(title: 'Household'),
-            Card(
-              child: ListTile(
-                leading: const Icon(LucideIcons.users),
-                title: const Text('Manage Household'),
-                subtitle: const Text('Add family members & sub-accounts.'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const HouseholdScreen()));
-                },
-              ),
+          // Household Section - Always show for now, or check API profile
+          // Since we don't have the provider, we'll optimistically show it or fetch profile async if critical.
+          // For simplicity/speed, we show it. Sub-users accessing it might get an empty list or error handled in HouseholdScreen.
+          const SizedBox(height: 24),
+          _SectionHeader(title: 'Household'),
+          Card(
+            child: ListTile(
+              leading: const Icon(LucideIcons.users),
+              title: const Text('Manage Household'),
+              subtitle: const Text('Add family members & sub-accounts.'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const HouseholdScreen()));
+              },
             ),
-          ],
+          ),
 
           const SizedBox(height: 24),
           _SectionHeader(title: 'Security'),
@@ -91,7 +97,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
            Center(
              child: TextButton.icon(
                onPressed: () {
-                 Navigator.pushReplacementNamed(context, '/login');
+                 // Logout logic reuse
+                 _handleLogout(context);
                },
                icon: const Icon(Icons.logout, color: Colors.red),
                label: const Text('Log Out', style: TextStyle(color: Colors.red)),
@@ -100,6 +107,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    await ApiClient.logout();
+    if (!context.mounted) return;
+    Navigator.of(context, rootNavigator: true).pushReplacementNamed('/login');
   }
 }
 

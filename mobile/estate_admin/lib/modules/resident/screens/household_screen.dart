@@ -23,9 +23,9 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
   Future<void> _loadMembers() async {
     setState(() => _isLoading = true);
     try {
-      final members = await ApiClient.getHousehold();
+      final membersList = await ApiClient.getHousehold();
       setState(() {
-        _members = members;
+        _members = (membersList as List).map((m) => User.fromJson(m)).toList();
         _isLoading = false;
       });
     } catch (e) {

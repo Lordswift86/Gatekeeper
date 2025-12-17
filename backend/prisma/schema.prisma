@@ -19,7 +19,6 @@ model Estate {
   subscriptionTier String    @default("FREE") // 'FREE' | 'PREMIUM'
   status           String    @default("ACTIVE") // 'ACTIVE' | 'SUSPENDED'
   securityPhone    String?   // Contact number for gate/security
-  policeContact    String?   // Emergency/Police contact number for SOS
 
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt

@@ -32,7 +32,11 @@ class EstateAdminApp extends StatelessWidget {
         ),
         textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
       ),
-      home: const LoginScreen(),
+      routes: {
+        '/': (context) => const LoginScreen(),
+        '/login': (context) => const LoginScreen(),
+      },
+      initialRoute: '/',
     );
   }
 }
