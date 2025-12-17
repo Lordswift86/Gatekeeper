@@ -84,50 +84,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      body: Row(
-        children: [
-          NavigationRail(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (index) {
-              setState(() => _selectedIndex = index);
-            },
-            labelType: NavigationRailLabelType.all,
-            destinations: const [
-              NavigationRailDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard),
-                label: Text('Dashboard'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.people_outlined),
-                selectedIcon: Icon(Icons.people),
-                label: Text('Residents'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.receipt_outlined),
-                selectedIcon: Icon(Icons.receipt),
-                label: Text('Bills'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.campaign_outlined),
-                selectedIcon: Icon(Icons.campaign),
-                label: Text('Announcements'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.badge_outlined),
-                selectedIcon: Icon(Icons.badge),
-                label: Text('Passes'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.history_outlined),
-                selectedIcon: Icon(Icons.history),
-                label: Text('Logs'),
-              ),
-            ],
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() => _selectedIndex = index);
+        },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Colors.grey,
+        selectedFontSize: 12,
+        unselectedFontSize: 10,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_outlined),
+            activeIcon: Icon(Icons.dashboard),
+            label: 'Dashboard',
           ),
-          const VerticalDivider(thickness: 1, width: 1),
-          Expanded(
-            child: _screens[_selectedIndex],
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people_outlined),
+            activeIcon: Icon(Icons.people),
+            label: 'Residents',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_outlined),
+            activeIcon: Icon(Icons.receipt),
+            label: 'Bills',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.campaign_outlined),
+            activeIcon: Icon(Icons.campaign),
+            label: 'Announcements',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.badge_outlined),
+            activeIcon: Icon(Icons.badge),
+            label: 'Passes',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history_outlined),
+            activeIcon: Icon(Icons.history),
+            label: 'Logs',
           ),
         ],
       ),
@@ -174,122 +171,96 @@ class _DashboardHome extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             
-            // Stats Grid - Responsive
-            LayoutBuilder(
-              builder: (context, constraints) {
-                // Calculate responsive columns based on width
-                final crossAxisCount = constraints.maxWidth > 1200 ? 4 : 
-                                       constraints.maxWidth > 800 ? 3 : 
-                                       constraints.maxWidth > 500 ? 2 : 1;
-                return GridView.count(
-                  crossAxisCount: crossAxisCount,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1.4,
-                  children: [
-                    _StatCard(
-                      title: 'Total Residents',
-                      value: totalResidents.toString(),
-                      icon: Icons.people,
-                      color: Colors.blue,
-                      trend: '+${pendingResidents} pending',
-                      trendColor: Colors.orange,
-                    ),
-                    _StatCard(
-                      title: 'Active Passes',
-                      value: activePasses.toString(),
-                      icon: Icons.badge,
-                      color: Colors.green,
-                      trend: 'Today\'s visitors: $visitorCount',
-                      trendColor: Colors.green,
-                    ),
-                    _StatCard(
-                      title: 'Bills Collection',
-                      value: '₦${_formatAmount(totalRevenue)}',
-                      icon: Icons.monetization_on,
-                      color: Colors.purple,
-                      trend: '$paidBills paid, $unpaidBills unpaid',
-                      trendColor: unpaidBills > 0 ? Colors.red : Colors.green,
-                    ),
-                    _StatCard(
-                      title: 'Pending Actions',
-                      value: (pendingResidents + unpaidBills).toString(),
-                      icon: Icons.pending_actions,
-                      color: Colors.orange,
-                      trend: 'Requires attention',
-                      trendColor: Colors.orange,
-                    ),
-                  ],
-                );
-              },
+            // Stats Grid - Compact 2x2 Layout
+            GridView.count(
+              crossAxisCount: 2, // Fixed 2 columns for consistent layout
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 8, // Reduced from 12
+              mainAxisSpacing: 8, // Reduced from 12
+              childAspectRatio: 1.0, // Square cards for compact look
+              children: [
+                _StatCard(
+                  title: 'Total Residents',
+                  value: totalResidents.toString(),
+                  icon: Icons.people,
+                  color: Colors.blue,
+                  trend: '+$pendingResidents pending',
+                  trendColor: Colors.orange,
+                ),
+                _StatCard(
+                  title: 'Active Passes',
+                  value: activePasses.toString(),
+                  icon: Icons.badge,
+                  color: Colors.green,
+                  trend: '$visitorCount visitors',
+                  trendColor: Colors.green,
+                ),
+                _StatCard(
+                  title: 'Bill Collection',
+                  value: '₦${_formatAmount(totalRevenue)}',
+                  icon: Icons.monetization_on,
+                  color: Colors.purple,
+                  trend: '$paidBills paid',
+                  trendColor: unpaidBills > 0 ? Colors.red : Colors.green,
+                ),
+                _StatCard(
+                  title: 'Pending Actions',
+                  value: (pendingResidents + unpaidBills).toString(),
+                  icon: Icons.pending_actions,
+                  color: Colors.orange,
+                  trend: 'Needs attention',
+                  trendColor: Colors.orange,
+                ),
+              ],
             ),
             
             const SizedBox(height: 32),
             
-            // Analytics Section
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Analytics Section - Stacked for Mobile
+            Column(
               children: [
-                // Bill Status Chart
-                Expanded(
-                  flex: 2,
-                  child: _ChartCard(
-                    title: 'Bill Status',
-                    child: _SimplePieChart(
-                      segments: [
-                        _PieSegment('Paid', paidBills.toDouble(), Colors.green),
-                        _PieSegment('Unpaid', unpaidBills.toDouble(), Colors.red),
-                      ],
-                    ),
+                _ChartCard(
+                  title: 'Bill Status',
+                  child: _SimplePieChart(
+                    segments: [
+                      _PieSegment('Paid', paidBills.toDouble(), Colors.green),
+                      _PieSegment('Unpaid', unpaidBills.toDouble(), Colors.red),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 16),
-                
-                // Pass Distribution
-                Expanded(
-                  flex: 2,
-                  child: _ChartCard(
-                    title: 'Pass Types (Today)',
-                    child: _SimpleBarChart(
-                      bars: [
-                        _BarData('One-Time', stats?['oneTimePasses']?.toDouble() ?? 3.0, Colors.blue),
-                        _BarData('Recurring', stats?['recurringPasses']?.toDouble() ?? 2.0, Colors.green),
-                        _BarData('Delivery', stats?['deliveryPasses']?.toDouble() ?? 5.0, Colors.orange),
-                      ],
-                    ),
+                const SizedBox(height: 16),
+                _ChartCard(
+                  title: 'Pass Types (Today)',
+                  child: _SimpleBarChart(
+                    bars: [
+                      _BarData('One-Time', stats?['oneTimePasses']?.toDouble() ?? 3.0, Colors.blue),
+                      _BarData('Recurring', stats?['recurringPasses']?.toDouble() ?? 2.0, Colors.green),
+                      _BarData('Delivery', stats?['deliveryPasses']?.toDouble() ?? 5.0, Colors.orange),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 16),
-                
-                // Quick Stats
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    children: [
-                      _MiniStatCard(
-                        label: 'Approval Rate',
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MiniStatCard(
+                        label: 'Approval',
                         value: '${totalResidents > 0 ? ((totalResidents - pendingResidents) / totalResidents * 100).toStringAsFixed(0) : 100}%',
                         icon: Icons.check_circle,
                         color: Colors.green,
                       ),
-                      const SizedBox(height: 12),
-                      _MiniStatCard(
-                        label: 'Collection Rate',
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _MiniStatCard(
+                        label: 'Collection',
                         value: '${(paidBills + unpaidBills) > 0 ? (paidBills / (paidBills + unpaidBills) * 100).toStringAsFixed(0) : 100}%',
                         icon: Icons.trending_up,
                         color: Colors.blue,
                       ),
-                      const SizedBox(height: 12),
-                      _MiniStatCard(
-                        label: 'Active Now',
-                        value: visitorCount.toString(),
-                        icon: Icons.person_pin_circle,
-                        color: Colors.purple,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -366,11 +337,11 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
+      elevation: 1, // Reduced from 2
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(8), // Reduced from 12
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8), // Reduced from 12
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -379,30 +350,40 @@ class _StatCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(4), // Reduced from 6
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Icon(icon, color: color, size: 20),
+                  child: Icon(icon, color: color, size: 14), // Reduced from 16
                 ),
                 const Spacer(),
               ],
             ),
             const Spacer(),
-            Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-            Text(title, 
-              style: Theme.of(context).textTheme.bodySmall,
-              maxLines: 2,
+            Text(value, 
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold), // Reduced from titleLarge
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            if (trend != null) ...[
-              const SizedBox(height: 4),
-              Text(trend!, style: TextStyle(fontSize: 11, color: trendColor ?? Colors.grey)),
+            const SizedBox(height: 2),
+            Text(title, 
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11), // Smaller
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (trend != null) ...[ 
+              const SizedBox(height: 2),
+              Text(trend!, 
+                style: TextStyle(fontSize: 9, color: trendColor ?? Colors.grey), // Reduced from 10
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ],
         ),
@@ -433,7 +414,7 @@ class _ChartCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 16),
-            SizedBox(height: 150, child: child),
+            SizedBox(height: 120, child: child),
           ],
         ),
       ),
@@ -533,15 +514,19 @@ class _SimpleBarChart extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: bars.map((bar) {
-        final height = (bar.value / maxValue) * 120;
+        final height = (bar.value / maxValue) * 90; // Reduced from 120
         return Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 6), // Reduced from 8
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min, // Added to prevent overflow
               children: [
-                Text(bar.value.toInt().toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
+                Text(bar.value.toInt().toString(), 
+                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), // Reduced from 11
+                  maxLines: 1,
+                ),
+                const SizedBox(height: 2), // Reduced from 4
                 Container(
                   height: height,
                   decoration: BoxDecoration(
@@ -549,8 +534,13 @@ class _SimpleBarChart extends StatelessWidget {
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(bar.label, style: const TextStyle(fontSize: 10), textAlign: TextAlign.center),
+                const SizedBox(height: 2), // Reduced from 4
+                Text(bar.label, 
+                  style: const TextStyle(fontSize: 9), // Reduced from 10
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -580,17 +570,28 @@ class _MiniStatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         child: Row(
           children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-              ],
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(value, 
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(label, 
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ],
         ),

@@ -30,6 +30,7 @@ class ApiService {
     
     if (includeAuth) {
       final token = await getToken();
+      print('[DEBUG] getHeaders - Token: ${token != null ? token.substring(0, 20) + '...' : 'NULL'}');
       if (token != null) {
         headers['Authorization'] = 'Bearer $token';
       }

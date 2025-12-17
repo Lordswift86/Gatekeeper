@@ -10,8 +10,16 @@ class EstateAdminApiClient {
       requiresAuth: false,
     );
     
-    if (response['token'] != null) {
-      await ApiService.setToken(response['token']);
+    // Backend returns 'accessToken', not 'token'
+    if (response['accessToken'] != null) {
+      print('[DEBUG] Saving token: ${response['accessToken'].substring(0, 20)}...');
+      await ApiService.setToken(response['accessToken']);
+      // Increased delay to ensure SharedPreferences write completes
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Verify token was saved
+      final savedToken = await ApiService.getToken();
+      print('[DEBUG] Retrieved token: ${savedToken?.substring(0, 20) ?? 'NULL'}...');
     }
     
     return response;
