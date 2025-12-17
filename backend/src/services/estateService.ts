@@ -37,12 +37,41 @@ export const EstateService = {
     },
 
     async toggleEstateStatus(id: string) {
-        const estate = await prisma.estate.findUnique({ where: { id } })
+        const estate = await prisma.estate.findUnique({
+            where: { id },
+            include: {
+                users: {
+                    where: { role: 'ESTATE_ADMIN' }
+                }
+            }
+        })
+
         if (!estate) throw new Error('Estate not found')
+
+        // Determine new status
+        let newStatus: string
+        if (estate.status === 'PENDING') {
+            // Activating a pending estate
+            newStatus = 'ACTIVE'
+
+            // Also approve all estate admin users for this estate
+            if (estate.users.length > 0) {
+                await prisma.user.updateMany({
+                    where: {
+                        estateId: id,
+                        role: 'ESTATE_ADMIN'
+                    },
+                    data: { isApproved: true }
+                })
+            }
+        } else {
+            // Toggle between ACTIVE and SUSPENDED
+            newStatus = estate.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'
+        }
 
         return prisma.estate.update({
             where: { id },
-            data: { status: estate.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE' }
+            data: { status: newStatus }
         })
     },
 
