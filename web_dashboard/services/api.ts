@@ -272,6 +272,19 @@ export const api = {
         const { data } = await axiosInstance.get('/admin/system-logs', { params: filters });
         return data;
     },
+
+    // ============= Uploads =============
+    async uploadImage(file: File): Promise<string> {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const { data } = await axiosInstance.post('/upload/image', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return data.url;
+    },
 };
 
 export default api;

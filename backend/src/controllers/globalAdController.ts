@@ -36,3 +36,21 @@ export const deleteAd = async (req: Request, res: Response) => {
         res.status(500).json({ message: error.message })
     }
 }
+
+export const trackImpression = async (req: Request, res: Response) => {
+    try {
+        const ad = await GlobalAdService.incrementImpressions(req.params.id)
+        res.json(ad)
+    } catch (error: any) {
+        res.status(500).json({ message: error.message })
+    }
+}
+
+export const trackClick = async (req: Request, res: Response) => {
+    try {
+        const ad = await GlobalAdService.incrementClicks(req.params.id)
+        res.json(ad)
+    } catch (error: any) {
+        res.status(500).json({ message: error.message })
+    }
+}

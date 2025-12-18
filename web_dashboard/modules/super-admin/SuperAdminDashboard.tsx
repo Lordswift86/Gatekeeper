@@ -34,6 +34,9 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
     const [adContent, setAdContent] = useState('');
     const [adTargetUrl, setAdTargetUrl] = useState('');
     const [adActive, setAdActive] = useState(true);
+    const [adImageFile, setAdImageFile] = useState<File | null>(null);
+    const [adPreviewUrl, setAdPreviewUrl] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     // Estate Residents Modal
     const [selectedEstateId, setSelectedEstateId] = useState<string | null>(null);
@@ -47,17 +50,19 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
     const refreshData = async () => {
         setIsLoading(true);
         try {
-            const [estatesData, usersData, adsData, logsData] = await Promise.all([
+            const [estatesData, usersData, adsData, logsData, statsData] = await Promise.all([
                 api.getAllEstates(),
                 api.getAllUsers?.() || Promise.resolve([]),
                 api.getGlobalAds(),
-                api.getSystemLogs?.() || Promise.resolve([])
+                api.getSystemLogs?.() || Promise.resolve([]),
+                api.getPlatformStats?.() || Promise.resolve({ totalEstates: 0, totalUsers: 0, adImpressions: 0 })
             ]);
 
             setEstates(estatesData);
             setAllUsers(usersData);
             setAds(adsData);
             setLogs(logsData);
+            if (statsData) setStats(statsData);
         } catch (error) {
             console.error('Failed to load data:', error);
         } finally {
@@ -90,18 +95,56 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
     };
 
     // Ad Actions
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setAdImageFile(file);
+            setAdPreviewUrl(URL.createObjectURL(file));
+        }
+    };
+
     const handleSubmitAd = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsUploading(true);
         try {
+            let imageUrl = adPreviewUrl;
+            // If local file selected, upload it
+            if (adImageFile) {
+                imageUrl = await api.uploadImage(adImageFile);
+            } else if (editingAdId && !adImageFile && adPreviewUrl) {
+                // Keep existing URL if editing and no new file (preview url holds existing url)
+                // However, adPreviewUrl might be a blob url if changed, or http url if existing.
+                // If it's a blob url, we uploaded it above. 
+                // If it's http url, it means no change to image.
+                imageUrl = adPreviewUrl;
+            }
+
+            // If we are editing and adPreviewUrl is null, it means image removed? 
+            // The UI allows clearing. logic: if adPreviewUrl is null, imageUrl is null.
+
             if (editingAdId) {
-                await api.updateGlobalAd(editingAdId, { title: adTitle, content: adContent, targetUrl: adTargetUrl, isActive: adActive });
+                await api.updateGlobalAd(editingAdId, {
+                    title: adTitle,
+                    content: adContent,
+                    targetUrl: adTargetUrl,
+                    isActive: adActive,
+                    imageUrl: imageUrl
+                });
             } else {
-                await api.createGlobalAd({ title: adTitle, content: adContent, targetUrl: adTargetUrl });
+                await api.createGlobalAd({
+                    title: adTitle,
+                    content: adContent,
+                    targetUrl: adTargetUrl,
+                    imageUrl: imageUrl || undefined
+                });
             }
             resetAdForm();
             await refreshData();
         } catch (error) {
             console.error('Failed to submit ad:', error);
+            alert('Failed to save ad. Please try again.');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -111,6 +154,8 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
         setAdContent(ad.content);
         setAdTargetUrl(ad.targetUrl || '');
         setAdActive(ad.isActive);
+        setAdPreviewUrl(ad.imageUrl || null);
+        setAdImageFile(null);
         setIsCreatingAd(true);
     };
 
@@ -121,6 +166,8 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
         setAdContent('');
         setAdTargetUrl('');
         setAdActive(true);
+        setAdImageFile(null);
+        setAdPreviewUrl(null);
     };
 
     const handleDeleteAd = async (adId: string) => {
@@ -168,7 +215,7 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
                 </div>
 
                 {/* Global Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <Card>
                         <CardBody className="flex items-center gap-4">
                             <div className="p-3 rounded-lg bg-indigo-500 text-white">
@@ -202,7 +249,18 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
                             </div>
                         </CardBody>
                     </Card>
-                </div>
+                    <Card>
+                        <CardBody className="flex items-center gap-4">
+                            <div className="p-3 rounded-lg bg-green-500 text-white">
+                                <Activity size={24} />
+                            </div>
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Ad Clicks</p>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{(stats as any).adClicks?.toLocaleString() || 0}</p>
+                            </div>
+                        </CardBody>
+                    </Card>
+                </div >
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card>
@@ -246,7 +304,7 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
                         </CardBody>
                     </Card>
                 </div>
-            </div>
+            </div >
         );
     }
 
@@ -366,6 +424,35 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
                                     />
                                 </div>
                                 <div>
+                                    <label className="block text-sm font-bold mb-1 dark:text-white">Banner Image</label>
+                                    <div className="flex items-center gap-4">
+                                        {adPreviewUrl && (
+                                            <div className="relative w-24 h-16 rounded overflow-hidden border border-slate-200">
+                                                <img src={adPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setAdImageFile(null); setAdPreviewUrl(null); }}
+                                                    className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl"
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        )}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="block w-full text-sm text-slate-500
+                                              file:mr-4 file:py-2 file:px-4
+                                              file:rounded-full file:border-0
+                                              file:text-sm file:font-semibold
+                                              file:bg-indigo-50 file:text-indigo-700
+                                              hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-300"
+                                            onChange={handleImageSelect}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-1">Recommended size: 1200x628px (approx 2:1 ratio)</p>
+                                </div>
+                                <div>
                                     <label className="block text-sm font-bold mb-1 dark:text-white">Target Link (Optional)</label>
                                     <input
                                         type="url"
@@ -388,7 +475,9 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
                                 </div>
                                 <div className="flex gap-2 justify-end">
                                     <Button type="button" variant="ghost" onClick={resetAdForm}>Cancel</Button>
-                                    <Button type="submit">{editingAdId ? 'Update Campaign' : 'Launch Campaign'}</Button>
+                                    <Button type="submit" disabled={isUploading}>
+                                        {isUploading ? 'Uploading...' : (editingAdId ? 'Update Campaign' : 'Launch Campaign')}
+                                    </Button>
                                 </div>
                             </form>
                         </CardBody>
@@ -398,32 +487,39 @@ export const SuperAdminDashboard: React.FC<Props> = ({ user, currentView }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {ads.map(ad => (
                         <Card key={ad.id}>
-                            <CardBody className="flex justify-between items-start">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded ${ad.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                                            {ad.isActive ? 'Active' : 'Paused'}
-                                        </span>
-                                        <span className="text-xs text-slate-400">{new Date(ad.createdAt).toLocaleDateString()}</span>
+                            <CardBody className="flex flex-col h-full">
+                                {ad.imageUrl && (
+                                    <div className="w-full h-32 mb-3 rounded-md overflow-hidden bg-slate-100">
+                                        <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
                                     </div>
-                                    <h4 className="font-bold text-lg text-slate-900 dark:text-white">{ad.title}</h4>
-                                    <p className="text-slate-600 dark:text-slate-300 text-sm mb-1">{ad.content}</p>
-                                    {ad.targetUrl && (
-                                        <p className="text-xs text-indigo-500 mb-4 flex items-center gap-1">
-                                            <TrendingUp size={12} /> {ad.targetUrl}
-                                        </p>
-                                    )}
-                                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                                        <Activity size={16} /> <strong>{ad.impressions?.toLocaleString() || 0}</strong> impressions
+                                )}
+                                <div className="flex justify-between items-start flex-1">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded ${ad.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                {ad.isActive ? 'Active' : 'Paused'}
+                                            </span>
+                                            <span className="text-xs text-slate-400">{new Date(ad.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                        <h4 className="font-bold text-lg text-slate-900 dark:text-white">{ad.title}</h4>
+                                        <p className="text-slate-600 dark:text-slate-300 text-sm mb-1">{ad.content}</p>
+                                        {ad.targetUrl && (
+                                            <p className="text-xs text-indigo-500 mb-4 flex items-center gap-1">
+                                                <TrendingUp size={12} /> {ad.targetUrl}
+                                            </p>
+                                        )}
+                                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                                            <Activity size={16} /> <strong>{ad.impressions?.toLocaleString() || 0}</strong> impressions
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button variant="ghost" className="text-indigo-600 hover:bg-indigo-50" onClick={() => handleEditClick(ad)}>
-                                        <Edit size={18} />
-                                    </Button>
-                                    <Button variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteAd(ad.id)}>
-                                        <Trash2 size={18} />
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button variant="ghost" className="text-indigo-600 hover:bg-indigo-50" onClick={() => handleEditClick(ad)}>
+                                            <Edit size={18} />
+                                        </Button>
+                                        <Button variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteAd(ad.id)}>
+                                            <Trash2 size={18} />
+                                        </Button>
+                                    </div>
                                 </div>
                             </CardBody>
                         </Card>

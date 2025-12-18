@@ -406,4 +406,20 @@ class ApiClient {
     final response = await ApiService.get('/admin/global-ads');
     return response as List;
   }
+
+  static Future<void> recordAdImpression(String adId) async {
+    try {
+      await ApiService.post('/admin/global-ads/$adId/impression', {});
+    } catch (e) {
+      print('Failed to record impression: $e');
+    }
+  }
+
+  static Future<void> recordAdClick(String adId) async {
+    try {
+      await ApiService.post('/admin/global-ads/$adId/click', {});
+    } catch (e) {
+      print('Failed to record click: $e');
+    }
+  }
 }

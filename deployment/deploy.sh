@@ -29,13 +29,18 @@ check_connection() {
 # Deploy Backend
 deploy_backend() {
     log "Deploying Backend..."
-    
+
+    # Get script directory to find project root
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+    PROJECT_ROOT="$SCRIPT_DIR/.."
+    BACKEND_DIR="$PROJECT_ROOT/backend"
+
+    # Sync backend files to VPS
+    log "Syncing backend files to VPS..."
+    rsync -avz --delete --exclude 'node_modules' --exclude 'dist' --exclude '.env' "$BACKEND_DIR/" ${DEPLOY_USER}@${DEPLOY_HOST}:/var/www/gatekeeper/backend/
+
     ssh ${DEPLOY_USER}@${DEPLOY_HOST} << 'ENDSSH'
         cd /var/www/gatekeeper/backend
-        
-        # Pull latest code
-        git fetch origin
-        git reset --hard origin/main
         
         # Install regular dependencies (for build)
         npm ci

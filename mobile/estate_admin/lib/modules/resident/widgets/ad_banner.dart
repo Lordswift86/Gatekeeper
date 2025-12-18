@@ -89,9 +89,19 @@ class _AdBannerState extends State<AdBanner> {
     final targetUrl = ad['targetUrl'];
 
     // Footer Style (kept mostly same but added click)
+    // Record impression
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ad['id'] != null) {
+        ApiClient.recordAdImpression(ad['id']);
+      }
+    });
+
     if (widget.position == AdPosition.footer) {
       return GestureDetector(
-        onTap: () => _launchURL(targetUrl),
+        onTap: () {
+            if (ad['id'] != null) ApiClient.recordAdClick(ad['id']);
+            _launchURL(targetUrl);
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           decoration: BoxDecoration(
@@ -156,22 +166,21 @@ class _AdBannerState extends State<AdBanner> {
       );
     }
 
-    // Inline Style (Removed "ADVERTISEMENT" text, made clickable)
+    // Inline Style
     return GestureDetector(
-      onTap: () => _launchURL(targetUrl),
+      onTap: () {
+          if (ad['id'] != null) ApiClient.recordAdClick(ad['id']);
+          _launchURL(targetUrl);
+      },
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(24),
+        clipBehavior: Clip.antiAlias,
         margin: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: Colors.grey[100], 
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.grey[300]!, 
-            style: BorderStyle.solid, 
-          ),
-          // Add box shadow to indicate it's a card/clickable
-           boxShadow: [
+          border: Border.all(color: Colors.grey[300]!),
+          boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
               blurRadius: 4,
@@ -180,36 +189,54 @@ class _AdBannerState extends State<AdBanner> {
           ],
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Removed ADVERTISEMENT / SPONSORED text label
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B), // Slate 800
+            if (ad['imageUrl'] != null)
+              SizedBox(
+                height: 180,
+                child: Image.network(
+                  ad['imageUrl'],
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => 
+                     const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+                ),
+              ),
+            
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    content,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                  if (targetUrl != null && targetUrl.isNotEmpty) ...[
+                     const SizedBox(height: 12),
+                     Text(
+                       'Learn More',
+                       style: TextStyle(
+                         color: Theme.of(context).primaryColor,
+                         fontWeight: FontWeight.w600,
+                       ),
+                     )
+                  ]
+                ],
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              content,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF475569), // Slate 600
-              ),
-            ),
-            if (targetUrl != null && targetUrl.isNotEmpty) ...[
-               const SizedBox(height: 12),
-               Text(
-                 'Learn More',
-                 style: TextStyle(
-                   color: Theme.of(context).primaryColor,
-                   fontWeight: FontWeight.w600,
-                 ),
-               )
-            ]
           ],
         ),
       ),
