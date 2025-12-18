@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import "package:gatekeeper_estate_admin/services/api_client.dart";
 import 'package:gatekeeper_estate_admin/modules/resident/widgets/custom_button.dart';
 import 'package:gatekeeper_estate_admin/modules/resident/widgets/phone_input.dart';
-import 'package:gatekeeper_estate_admin/modules/resident/providers/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -45,8 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // Set user in provider
-      Provider.of<UserProvider>(context, listen: false).setUser(result['user']);
+      // Navigate to dashboard
 
       // Navigate to dashboard
       Navigator.pushReplacementNamed(context, '/dashboard');

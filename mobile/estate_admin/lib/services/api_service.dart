@@ -127,10 +127,6 @@ class ApiService {
       
       
       throw Exception('Unauthorized: ${response.body}');
-      final errorBody = response.body.isNotEmpty 
-          ? jsonDecode(response.body) 
-          : {'message': 'Unknown error'};
-      throw Exception(errorBody['message'] ?? 'Request failed');
     }
   }
   

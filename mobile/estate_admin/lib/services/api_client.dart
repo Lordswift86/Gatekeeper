@@ -12,6 +12,10 @@ class ApiClient {
       {'phone': phone, 'password': password},
       requiresAuth: false,
     );
+
+    if (response == null) {
+      throw Exception('Login failed: No response from server');
+    }
     
     // Backend returns 'accessToken', not 'token'
     if (response['accessToken'] != null) {
@@ -23,6 +27,14 @@ class ApiClient {
       // Verify token was saved
       final savedToken = await ApiService.getToken();
       print('[DEBUG] Retrieved token: ${savedToken?.substring(0, 20) ?? 'NULL'}...');
+    } else {
+      // If we got a response but no token, something is wrong
+       print('[DEBUG] Login response missing accessToken: $response');
+       // Depending on backend, maybe it returns error in body but status 200? 
+       // For now, let's just proceed or throw if critical.
+       // It's better to return response so UI can handle it or throw?
+       // The original code would crash on next line accessing null['accessToken'] equivalent if it was null.
+       // Here response is not null. But if accessToken is null, we log it.
     }
     
     return response;

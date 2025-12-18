@@ -217,54 +217,88 @@ class SettingsScreen extends StatelessWidget {
       currentPhone = estate['securityPhone'] ?? '';
     } catch (_) {}
 
-    final controller = TextEditingController(text: currentPhone);
+    final phoneController = TextEditingController(text: currentPhone);
+    final passwordController = TextEditingController();
+    bool obscurePassword = true;
 
     if (!context.mounted) return;
 
-    final result = await showDialog<String>(
+    final result = await showDialog<Map<String, String>>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Security Contact'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Enter the phone number that residents will call when they tap "Call Gate".'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'Phone Number',
-                hintText: '+234...',
-                border: OutlineInputBorder(),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+          title: const Text('Security Contact & Account'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Enter the phone number for "Call Gate" and a password to create/update the Security account.',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
               ),
-              keyboardType: TextInputType.phone,
+              const SizedBox(height: 16),
+              TextField(
+                controller: phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  hintText: '+234...',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.phone),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                decoration: InputDecoration(
+                  labelText: 'Security Password',
+                  hintText: 'Create/Update Password',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => obscurePassword = !obscurePassword),
+                  ),
+                ),
+                obscureText: obscurePassword,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (phoneController.text.isEmpty) return;
+                Navigator.pop(context, {
+                  'securityPhone': phoneController.text,
+                  'securityPassword': passwordController.text
+                });
+              },
+              child: const Text('Save'),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Save'),
-          ),
-        ],
+        );
+        }
       ),
     );
 
     if (result != null && context.mounted) {
       try {
-        await ApiClient.updateEstate(estateId, {'securityPhone': result});
+        // Only send password if provided
+        final data = {
+          'securityPhone': result['securityPhone'],
+        };
+        if (result['securityPassword']!.isNotEmpty) {
+          data['securityPassword'] = result['securityPassword']!;
+        }
+
+        await ApiClient.updateEstate(estateId, data);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Settings saved successfully')),
+            const SnackBar(content: Text('Settings & Security Account saved successfully')),
           );
-          // Force rebuild to show new value would require converting to StatefulWidget, 
-          // or we rely on FutureBuilder re-triggering if parent rebuilds. 
-          // For now, simpler to leave as is or use a State management solution.
-          // Triggering a rebuild by navigating replacement or similar hack:
           Navigator.pushReplacement(
             context, 
             MaterialPageRoute(builder: (_) => SettingsScreen(user: user))

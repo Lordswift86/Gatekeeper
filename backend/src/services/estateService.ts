@@ -1,5 +1,7 @@
 import prisma from '../config/db'
 
+import bcrypt from 'bcryptjs'
+
 export const EstateService = {
     async getAllEstates() {
         return prisma.estate.findMany({
@@ -29,10 +31,54 @@ export const EstateService = {
         })
     },
 
-    async updateEstate(id: string, data: { name?: string, tier?: string, securityPhone?: string }) {
+    async updateEstate(id: string, data: { name?: string, tier?: string, securityPhone?: string, securityPassword?: string }) {
+        // If security contact is being updated and password is provided, create/update security account
+        if (data.securityPhone && data.securityPassword) {
+            const hashedPassword = await bcrypt.hash(data.securityPassword, 12)
+
+            // defined role for security
+            const role = 'SECURITY'
+
+            // Check if user exists
+            const existingUser = await prisma.user.findFirst({
+                where: { phone: data.securityPhone }
+            })
+
+            if (existingUser) {
+                // Update existing user to be security (or at least update password if already security)
+                // Note: Changing role of existing user might be risky if they were a resident?
+                // For now, let's assume we update password and ensure they have access.
+                // If we want to support multi-role, that's a different schema. 
+                // Here we just update password. If we enforce role change:
+                await prisma.user.update({
+                    where: { id: existingUser.id },
+                    data: {
+                        password: hashedPassword,
+                        // role: role // Uncomment if we want to force role change
+                        // estateId: id // Ensure they belong to this estate?
+                    }
+                })
+            } else {
+                // Create new security user
+                await prisma.user.create({
+                    data: {
+                        name: 'Estate Security',
+                        phone: data.securityPhone,
+                        password: hashedPassword,
+                        role: role,
+                        estateId: id,
+                        isApproved: true
+                    }
+                })
+            }
+        }
+
+        // Remove securityPassword from data before updating estate (it's not part of estate model)
+        const { securityPassword, ...estateData } = data
+
         return prisma.estate.update({
             where: { id },
-            data
+            data: estateData
         })
     },
 

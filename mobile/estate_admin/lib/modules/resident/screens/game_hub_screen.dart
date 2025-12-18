@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:gatekeeper_estate_admin/modules/resident/screens/games/memory_game_screen.dart';
+import 'package:gatekeeper_estate_admin/modules/resident/screens/games/snake_game_screen.dart';
+import 'package:gatekeeper_estate_admin/modules/resident/screens/games/game_2048_screen.dart';
+import 'package:gatekeeper_estate_admin/modules/resident/screens/games/color_switch_game_screen.dart';
+import 'package:gatekeeper_estate_admin/modules/resident/screens/games/breathing_game_screen.dart';
 
 class GameHubScreen extends StatelessWidget {
   const GameHubScreen({super.key});
@@ -40,35 +45,35 @@ class GameHubScreen extends StatelessWidget {
                     subtitle: 'Match the pairs',
                     icon: LucideIcons.brain,
                     color: Colors.indigo,
-                    route: '/game/memory',
+                    targetScreen: MemoryGameScreen(),
                   ),
                   _GameCard(
                     title: 'Snake',
                     subtitle: 'Classic arcade',
-                    icon: LucideIcons.bug, // No snake icon, using bug
+                    icon: LucideIcons.bug,
                     color: Colors.green,
-                    route: '/game/snake',
+                    targetScreen: SnakeGameScreen(),
                   ),
                   _GameCard(
                     title: '2048',
                     subtitle: 'Tile puzzle',
                     icon: LucideIcons.layoutGrid,
                     color: Colors.orange,
-                    route: '/game/2048',
+                    targetScreen: Game2048Screen(),
                   ),
                   _GameCard(
                     title: 'Color Switch',
                     subtitle: 'Test reflexes',
                     icon: LucideIcons.palette,
                     color: Colors.purple,
-                    route: '/game/color',
+                    targetScreen: ColorSwitchGameScreen(),
                   ),
                   _GameCard(
                     title: 'Breathing',
                     subtitle: 'Calm your mind',
                     icon: LucideIcons.wind,
                     color: Colors.teal,
-                    route: '/game/breathing',
+                    targetScreen: BreathingGameScreen(),
                     isWellness: true,
                   ),
                 ],
@@ -86,7 +91,7 @@ class _GameCard extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final Color color;
-  final String route;
+  final Widget targetScreen;
   final bool isWellness;
 
   const _GameCard({
@@ -94,14 +99,17 @@ class _GameCard extends StatelessWidget {
     required this.subtitle,
     required this.icon,
     required this.color,
-    required this.route,
+    required this.targetScreen,
     this.isWellness = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, route),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => targetScreen),
+      ),
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
