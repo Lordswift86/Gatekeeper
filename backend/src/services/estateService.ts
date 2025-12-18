@@ -36,26 +36,25 @@ export const EstateService = {
         if (data.securityPhone && data.securityPassword) {
             const hashedPassword = await bcrypt.hash(data.securityPassword, 12)
 
+            // Format phone number to match login expectation
+            const { OTPService } = require('./smsService')
+            const formattedPhone = OTPService.formatPhone(data.securityPhone)
+
             // defined role for security
             const role = 'SECURITY'
 
             // Check if user exists
             const existingUser = await prisma.user.findFirst({
-                where: { phone: data.securityPhone }
+                where: { phone: formattedPhone }
             })
 
             if (existingUser) {
                 // Update existing user to be security (or at least update password if already security)
-                // Note: Changing role of existing user might be risky if they were a resident?
-                // For now, let's assume we update password and ensure they have access.
-                // If we want to support multi-role, that's a different schema. 
-                // Here we just update password. If we enforce role change:
                 await prisma.user.update({
                     where: { id: existingUser.id },
                     data: {
                         password: hashedPassword,
-                        // role: role // Uncomment if we want to force role change
-                        // estateId: id // Ensure they belong to this estate?
+                        phoneVerified: true
                     }
                 })
             } else {
@@ -63,11 +62,12 @@ export const EstateService = {
                 await prisma.user.create({
                     data: {
                         name: 'Estate Security',
-                        phone: data.securityPhone,
+                        phone: formattedPhone,
                         password: hashedPassword,
                         role: role,
                         estateId: id,
-                        isApproved: true
+                        isApproved: true,
+                        phoneVerified: true
                     }
                 })
             }
