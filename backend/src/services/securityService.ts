@@ -33,6 +33,7 @@ export const SecurityService = {
             destination: pass.hostUnit || pass.host.unitNumber || 'Unknown Unit',
             entryTime: pass.entryTime!,
             exitTime: pass.exitTime,
+            status: pass.status,
             type: 'DIGITAL',
             notes: `${pass.type} PASS - ${pass.code}`
         }))
