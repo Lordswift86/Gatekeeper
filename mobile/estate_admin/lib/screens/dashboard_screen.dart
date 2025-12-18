@@ -7,6 +7,7 @@ import 'announcements_screen.dart';
 import 'passes_screen.dart';
 import 'logs_screen.dart';
 import 'settings_screen.dart';
+import '../modules/resident/widgets/ad_banner.dart'; // Import AdBanner
 
 class DashboardScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -36,7 +37,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -144,6 +145,22 @@ class _DashboardHome extends StatelessWidget {
 
   const _DashboardHome({this.stats, required this.isLoading, required this.onRefresh, required this.onNavigate});
 
+  void _createPass(BuildContext context, PassType type) {
+    showDialog(
+      context: context,
+      builder: (context) => CreatePassDialog(
+        type: type,
+        onCreated: () {
+          onRefresh();
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pass created successfully')),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -173,55 +190,97 @@ class _DashboardHome extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
               ],
             ),
+            const SizedBox(height: 16),
+            
+            // Stats Row - Scrollable Horizontal
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _StatCard(
+                    title: 'Total Residents',
+                    value: totalResidents.toString(),
+                    icon: Icons.people,
+                    color: Colors.blue,
+                    trend: '+$pendingResidents pending',
+                    trendColor: Colors.orange,
+                  ),
+                  const SizedBox(width: 8),
+                  _StatCard(
+                    title: 'Active Passes',
+                    value: activePasses.toString(),
+                    icon: Icons.badge,
+                    color: Colors.green,
+                    trend: '$visitorCount visitors',
+                    trendColor: Colors.green,
+                  ),
+                  const SizedBox(width: 8),
+                  _StatCard(
+                    title: 'Bill Collection',
+                    value: '₦${_formatAmount(totalRevenue)}',
+                    icon: Icons.monetization_on,
+                    color: Colors.purple,
+                    trend: '$paidBills paid',
+                    trendColor: unpaidBills > 0 ? Colors.red : Colors.green,
+                  ),
+                  const SizedBox(width: 8),
+                  _StatCard(
+                    title: 'Pending Actions',
+                    value: (pendingResidents + unpaidBills).toString(),
+                    icon: Icons.pending_actions,
+                    color: Colors.orange,
+                    trend: 'Needs attention',
+                    trendColor: Colors.orange,
+                  ),
+                ],
+              ),
+            ),
+            
             const SizedBox(height: 24),
             
-            // Stats Grid - Compact 2x2 Layout
-            GridView.count(
-              crossAxisCount: 2, // Fixed 2 columns for consistent layout
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 8, // Reduced from 12
-              mainAxisSpacing: 8, // Reduced from 12
-              childAspectRatio: 1.0, // Square cards for compact look
+            // Ad Banner
+            const AdBanner(position: AdPosition.inline),
+
+            const SizedBox(height: 24),
+            
+            // Quick Actions
+            Text('Quick Actions', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
               children: [
-                _StatCard(
-                  title: 'Total Residents',
-                  value: totalResidents.toString(),
-                  icon: Icons.people,
+                _ActionButton(
+                  label: 'Generate Code', 
+                  icon: Icons.qr_code, 
+                  color: Colors.teal,
+                  onTap: () => _createPass(context, PassType.ONE_TIME),
+                ),
+                _ActionButton(
+                  label: 'Approve Residents', 
+                  icon: Icons.check_circle, 
+                  color: Colors.green, 
+                  badge: pendingResidents.toString(),
+                  onTap: () => onNavigate(1), // Residents Tab
+                ),
+                _ActionButton(
+                  label: 'Create Bill', 
+                  icon: Icons.add_box, 
                   color: Colors.blue,
-                  trend: '+$pendingResidents pending',
-                  trendColor: Colors.orange,
+                  onTap: () => onNavigate(2), // Bills Tab
                 ),
-                _StatCard(
-                  title: 'Active Passes',
-                  value: activePasses.toString(),
-                  icon: Icons.badge,
-                  color: Colors.green,
-                  trend: '$visitorCount visitors',
-                  trendColor: Colors.green,
-                ),
-                _StatCard(
-                  title: 'Bill Collection',
-                  value: '₦${_formatAmount(totalRevenue)}',
-                  icon: Icons.monetization_on,
+                _ActionButton(
+                  label: 'New Announcement', 
+                  icon: Icons.campaign, 
                   color: Colors.purple,
-                  trend: '$paidBills paid',
-                  trendColor: unpaidBills > 0 ? Colors.red : Colors.green,
-                ),
-                _StatCard(
-                  title: 'Pending Actions',
-                  value: (pendingResidents + unpaidBills).toString(),
-                  icon: Icons.pending_actions,
-                  color: Colors.orange,
-                  trend: 'Needs attention',
-                  trendColor: Colors.orange,
+                  onTap: () => onNavigate(3), // Announcements Tab
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 32),
             
-            // Analytics Section - Stacked for Mobile
+            // Analytics Section
             Column(
               children: [
                 _ChartCard(
@@ -244,65 +303,6 @@ class _DashboardHome extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _MiniStatCard(
-                        label: 'Approval',
-                        value: '${totalResidents > 0 ? ((totalResidents - pendingResidents) / totalResidents * 100).toStringAsFixed(0) : 100}%',
-                        icon: Icons.check_circle,
-                        color: Colors.green,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _MiniStatCard(
-                        label: 'Collection',
-                        value: '${(paidBills + unpaidBills) > 0 ? (paidBills / (paidBills + unpaidBills) * 100).toStringAsFixed(0) : 100}%',
-                        icon: Icons.trending_up,
-                        color: Colors.blue,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // Quick Actions
-            Text('Quick Actions', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _ActionButton(
-                  label: 'Approve Residents', 
-                  icon: Icons.check_circle, 
-                  color: Colors.green, 
-                  badge: pendingResidents.toString(),
-                  onTap: () => onNavigate(1), // Residents Tab
-                ),
-                _ActionButton(
-                  label: 'Create Bill', 
-                  icon: Icons.add_box, 
-                  color: Colors.blue,
-                  onTap: () => onNavigate(2), // Bills Tab
-                ),
-                _ActionButton(
-                  label: 'New Announcement', 
-                  icon: Icons.campaign, 
-                  color: Colors.purple,
-                  onTap: () => onNavigate(3), // Announcements Tab
-                ),
-                _ActionButton(
-                  label: 'View Reports', 
-                  icon: Icons.analytics, 
-                  color: Colors.indigo,
-                  onTap: () {},
-                ),
               ],
             ),
           ],
@@ -320,7 +320,7 @@ class _DashboardHome extends StatelessWidget {
   }
 }
 
-// Enhanced Stat Card
+// Enhanced Stat Card (Compact for Row)
 class _StatCard extends StatelessWidget {
   final String title;
   final String value;
@@ -340,63 +340,57 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 1, // Reduced from 2
-      child: Container(
-        padding: const EdgeInsets.all(8), // Reduced from 12
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8), // Reduced from 12
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.05)],
+    // Fixed width for horizontal scrolling consistency
+    return SizedBox(
+      width: 140, 
+      height: 100, // Fixed height to fit row
+      child: Card(
+        elevation: 1,
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.05)],
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(4), // Reduced from 6
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: color, size: 18),
+                  const Spacer(),
+                  Text(value, 
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
-                  child: Icon(icon, color: color, size: 14), // Reduced from 16
-                ),
-                const Spacer(),
-              ],
-            ),
-            const Spacer(),
-            Text(value, 
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold), // Reduced from titleLarge
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Text(title, 
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11), // Smaller
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (trend != null) ...[ 
-              const SizedBox(height: 2),
-              Text(trend!, 
-                style: TextStyle(fontSize: 9, color: trendColor ?? Colors.grey), // Reduced from 10
+                ],
+              ),
+              const Spacer(),
+              Text(title, 
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              if (trend != null) ...[ 
+                const SizedBox(height: 2),
+                Text(trend!, 
+                  style: TextStyle(fontSize: 9, color: trendColor ?? Colors.grey),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-// Chart Card Container
+// Reuse Chart Widgets
 class _ChartCard extends StatelessWidget {
   final String title;
   final Widget child;
@@ -426,29 +420,23 @@ class _ChartCard extends StatelessWidget {
   }
 }
 
-// Simple Pie Chart Widget
 class _SimplePieChart extends StatelessWidget {
   final List<_PieSegment> segments;
-
   const _SimplePieChart({required this.segments});
 
   @override
   Widget build(BuildContext context) {
     final total = segments.fold<double>(0, (sum, s) => sum + s.value);
-    if (total == 0) {
-      return const Center(child: Text('No data', style: TextStyle(color: Colors.grey)));
-    }
+    if (total == 0) return const Center(child: Text('No data', style: TextStyle(color: Colors.grey)));
 
     return Row(
       children: [
-        // Visual representation
         Expanded(
           child: CustomPaint(
             painter: _PieChartPainter(segments, total),
             child: const SizedBox.expand(),
           ),
         ),
-        // Legend
         Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -479,7 +467,6 @@ class _PieSegment {
 class _PieChartPainter extends CustomPainter {
   final List<_PieSegment> segments;
   final double total;
-
   _PieChartPainter(this.segments, this.total);
 
   @override
@@ -490,9 +477,7 @@ class _PieChartPainter extends CustomPainter {
     double startAngle = -3.14159 / 2;
     for (final segment in segments) {
       final sweepAngle = (segment.value / total) * 2 * 3.14159;
-      final paint = Paint()
-        ..color = segment.color
-        ..style = PaintingStyle.fill;
+      final paint = Paint()..color = segment.color..style = PaintingStyle.fill;
       canvas.drawArc(Rect.fromCircle(center: center, radius: radius), startAngle, sweepAngle, true, paint);
       startAngle += sweepAngle;
     }
@@ -502,35 +487,31 @@ class _PieChartPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// Simple Bar Chart Widget
 class _SimpleBarChart extends StatelessWidget {
   final List<_BarData> bars;
-
   const _SimpleBarChart({required this.bars});
 
   @override
   Widget build(BuildContext context) {
     final maxValue = bars.fold<double>(0, (max, b) => b.value > max ? b.value : max);
-    if (maxValue == 0) {
-      return const Center(child: Text('No data', style: TextStyle(color: Colors.grey)));
-    }
+    if (maxValue == 0) return const Center(child: Text('No data', style: TextStyle(color: Colors.grey)));
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: bars.map((bar) {
-        final height = (bar.value / maxValue) * 90; // Reduced from 120
+        final height = (bar.value / maxValue) * 90;
         return Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6), // Reduced from 8
+            padding: const EdgeInsets.symmetric(horizontal: 6),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min, // Added to prevent overflow
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(bar.value.toInt().toString(), 
-                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), // Reduced from 11
+                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
                   maxLines: 1,
                 ),
-                const SizedBox(height: 2), // Reduced from 4
+                const SizedBox(height: 2),
                 Container(
                   height: height,
                   decoration: BoxDecoration(
@@ -538,9 +519,9 @@ class _SimpleBarChart extends StatelessWidget {
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                   ),
                 ),
-                const SizedBox(height: 2), // Reduced from 4
+                const SizedBox(height: 2),
                 Text(bar.label, 
-                  style: const TextStyle(fontSize: 9), // Reduced from 10
+                  style: const TextStyle(fontSize: 9),
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -561,50 +542,6 @@ class _BarData {
   _BarData(this.label, this.value, this.color);
 }
 
-// Mini Stat Card
-class _MiniStatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _MiniStatCard({required this.label, required this.value, required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(value, 
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(label, 
-                    style: const TextStyle(fontSize: 10, color: Colors.grey),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Action Button with Badge
 class _ActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -641,6 +578,107 @@ class _ActionButton extends StatelessWidget {
               child: Text(badge!, style: const TextStyle(color: Colors.white, fontSize: 11), textAlign: TextAlign.center),
             ),
           ),
+      ],
+    );
+  }
+}
+
+// Pass Generation Dialog
+enum PassType { ONE_TIME, RECURRING, DELIVERY }
+
+class CreatePassDialog extends StatefulWidget {
+  final PassType type;
+  final VoidCallback onCreated;
+
+  const CreatePassDialog({super.key, required this.type, required this.onCreated});
+
+  @override
+  State<CreatePassDialog> createState() => _CreatePassDialogState();
+}
+
+class _CreatePassDialogState extends State<CreatePassDialog> {
+  final _nameController = TextEditingController();
+  final _notesController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleCreate() async {
+    if (_nameController.text.isEmpty) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final isDelivery = widget.type == PassType.DELIVERY;
+      
+      await ApiClient.generatePass(
+        guestName: isDelivery ? 'Delivery' : _nameController.text,
+        type: widget.type.name,
+        exitInstruction: _notesController.text.isEmpty ? null : _notesController.text,
+        deliveryCompany: isDelivery ? _nameController.text : null,
+      );
+
+      if (!mounted) return;
+      widget.onCreated();
+    } catch (e) {
+      if (!mounted) return;
+      
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to create pass: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDelivery = widget.type == PassType.DELIVERY;
+    
+    return AlertDialog(
+      title: Text(isDelivery ? 'Expected Delivery' : 'New Guest Code'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              labelText: isDelivery ? 'Delivery Company (e.g. UberEats)' : 'Guest Name',
+              border: const OutlineInputBorder(),
+            ),
+            enabled: !_isLoading,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _notesController,
+            decoration: const InputDecoration(
+              labelText: 'Exit Instructions (optional)',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 2,
+            enabled: !_isLoading,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _handleCreate,
+          child: _isLoading 
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Text('Generate Code'),
+        ),
       ],
     );
   }
