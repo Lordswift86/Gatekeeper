@@ -167,7 +167,30 @@ class _LogbookViewState extends State<LogbookView> {
                        ),
                        title: Text(log['guestName'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.bold)),
                        subtitle: Text("To: ${log['destination'] ?? 'N/A'} • ${log['notes'] ?? ''}"),
-                       trailing: Text(DateFormat.jm().format(date), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                       trailing: Column(
+                         mainAxisAlignment: MainAxisAlignment.center,
+                         crossAxisAlignment: CrossAxisAlignment.end,
+                         children: [
+                           Text(DateFormat.jm().format(date), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                           if (log['status'] != null)
+                             Container(
+                               margin: const EdgeInsets.only(top: 4),
+                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                               decoration: BoxDecoration(
+                                 color: log['status'] == 'CHECKED_IN' ? Colors.green.withValues(alpha: 0.1) : Colors.grey.shade200,
+                                 borderRadius: BorderRadius.circular(4)
+                               ),
+                               child: Text(
+                                 log['status'] == 'CHECKED_IN' ? 'IN' : (log['status'] == 'EXPIRED' ? 'OUT' : log['status']),
+                                 style: TextStyle(
+                                   fontSize: 10, 
+                                   fontWeight: FontWeight.bold,
+                                   color: log['status'] == 'CHECKED_IN' ? Colors.green : Colors.grey.shade700
+                                 )
+                               ),
+                             )
+                         ],
+                       ),
                      );
                    },
                  ),

@@ -32,4 +32,20 @@ router.post('/profile-photo', authenticateToken, upload.single('photo'), async (
     }
 });
 
+// Upload Generic Image (for Ads, etc.)
+router.post('/image', authenticateToken, upload.single('image'), async (req: any, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+        res.json({
+            message: 'Image uploaded successfully',
+            url: req.file.path, // Cloudinary URL
+        });
+    } catch (error) {
+        console.error('Upload Error:', error);
+        res.status(500).json({ message: 'Upload failed' });
+    }
+});
+
 export default router;

@@ -398,6 +398,7 @@ class _CreatePassDialogState extends State<CreatePassDialog> {
             enabled: !_isLoading,
           ),
           const SizedBox(height: 12),
+          const SizedBox(height: 12),
           TextField(
             controller: _notesController,
             decoration: const InputDecoration(
@@ -406,6 +407,31 @@ class _CreatePassDialogState extends State<CreatePassDialog> {
             ),
             maxLines: 2,
             enabled: !_isLoading,
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(LucideIcons.info, size: 20, color: Colors.blue),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.type == PassType.ONE_TIME 
+                        ? 'Code expires in 12 hours'
+                        : (widget.type == PassType.RECURRING 
+                            ? 'Code expires in 30 days'
+                            : 'Code expires in 30 minutes'),
+                    style: TextStyle(color: Colors.blue.shade700, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
