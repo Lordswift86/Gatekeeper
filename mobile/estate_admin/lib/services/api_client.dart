@@ -151,9 +151,10 @@ class ApiClient {
     return response;
   }
 
-  static Future<Map<String, dynamic>> updateEstate(String id, Map<String, dynamic> data) async {
+  static Future<Map<String, dynamic>?> updateEstate(String id, Map<String, dynamic> data) async {
+    print('[DEBUG] ApiClient.updateEstate id: $id, data: $data');
     final response = await ApiService.put('/estates/$id', data);
-    return response;
+    return response as Map<String, dynamic>?;
   }
   
   // ============= Residents Management =============
