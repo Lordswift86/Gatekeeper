@@ -152,10 +152,11 @@ class _DashboardHome extends StatelessWidget {
         type: type,
         onCreated: () {
           onRefresh();
-          Navigator.pop(context);
+          Navigator.pop(context); // Close dialog
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Pass created successfully')),
           );
+          onNavigate(4); // Navigate to Passes Screen (Index 4)
         },
       ),
     );
@@ -251,8 +252,8 @@ class _DashboardHome extends StatelessWidget {
               runSpacing: 12,
               children: [
                 _ActionButton(
-                  label: 'Generate Code', 
-                  icon: Icons.qr_code, 
+                  label: '+ New Guest', 
+                  icon: Icons.person_add, 
                   color: Colors.teal,
                   onTap: () => _createPass(context, PassType.ONE_TIME),
                 ),

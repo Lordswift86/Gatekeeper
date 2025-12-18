@@ -87,6 +87,9 @@ class GuestPass {
       'recurringTimeStart': recurringTimeStart,
       'recurringTimeEnd': recurringTimeEnd,
       'deliveryCompany': deliveryCompany,
+      'hostUnit': hostUnit,
+      'validFrom': DateTime.fromMillisecondsSinceEpoch(createdAt).toIso8601String(),
+      'validUntil': DateTime.fromMillisecondsSinceEpoch(validUntil).toIso8601String(),
     };
   }
 

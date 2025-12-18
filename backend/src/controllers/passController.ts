@@ -21,6 +21,20 @@ export const getMyPasses = async (req: AuthRequest, res: Response) => {
     }
 }
 
+export const getEstatePasses = async (req: AuthRequest, res: Response) => {
+    try {
+        // Only allow Estate Admin and Security
+        if (!['ESTATE_ADMIN', 'SECURITY'].includes(req.user!.role)) {
+            return res.status(403).json({ message: 'Unauthorized' })
+        }
+
+        const passes = await PassService.getEstatePasses(req.user!.estateId!)
+        res.json(passes)
+    } catch (e: any) {
+        res.status(400).json({ message: e.message })
+    }
+}
+
 export const validatePass = async (req: AuthRequest, res: Response) => {
     try {
         const { code, estateId } = req.body // Security usually scans and sends code + their estateId

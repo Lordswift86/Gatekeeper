@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { generatePass, getMyPasses, validatePass, entryPass, exitPass, cancelPass } from '../controllers/passController'
+import { generatePass, getMyPasses, getEstatePasses, validatePass, entryPass, exitPass, cancelPass } from '../controllers/passController'
 import { authenticateToken } from '../middleware/auth'
 
 const router = Router()
@@ -55,6 +55,20 @@ router.post('/generate', generatePass)
  *         description: List of passes
  */
 router.get('/my-passes', getMyPasses)
+
+/**
+ * @swagger
+ * /passes/estate:
+ *   get:
+ *     summary: Get all passes in the estate (Admin/Security only)
+ *     tags: [Passes]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all estate passes
+ */
+router.get('/estate', getEstatePasses)
 
 // Security Actions
 

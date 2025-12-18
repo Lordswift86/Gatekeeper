@@ -2,11 +2,46 @@ import prisma from '../config/db'
 
 export const SecurityService = {
     async getEstateLogs(estateId: string) {
-        return prisma.logEntry.findMany({
+        // 1. Fetch Manual Logs
+        const manualLogs = await prisma.logEntry.findMany({
             where: { estateId },
             orderBy: { entryTime: 'desc' },
-            take: 100
+            take: 50
         })
+
+        // 2. Fetch Digital Logs (Guest Passes with entryTime)
+        const digitalLogs = await prisma.guestPass.findMany({
+            where: {
+                host: { estateId },
+                entryTime: { not: null }
+            },
+            include: { host: true },
+            orderBy: { entryTime: 'desc' },
+            take: 50
+        })
+
+        console.log(`[SecurityService] Found ${manualLogs.length} manual logs and ${digitalLogs.length} digital logs for estate ${estateId}`);
+        if (digitalLogs.length > 0) {
+            console.log('[SecurityService] First digital log:', digitalLogs[0]);
+        }
+
+        // 3. Map Digital Logs to match LogEntry structure
+        const mappedDigitalLogs = digitalLogs.map(pass => ({
+            id: pass.id,
+            estateId: pass.host.estateId!,
+            guestName: pass.guestName,
+            destination: pass.hostUnit || pass.host.unitNumber || 'Unknown Unit',
+            entryTime: pass.entryTime!,
+            exitTime: pass.exitTime,
+            type: 'DIGITAL',
+            notes: `${pass.type} PASS - ${pass.code}`
+        }))
+
+        // 4. Merge and Sort
+        const allLogs = [...manualLogs, ...mappedDigitalLogs]
+        allLogs.sort((a, b) => b.entryTime.getTime() - a.entryTime.getTime())
+
+        return allLogs.slice(0, 100)
     },
 
     async addManualLog(estateId: string, data: { guestName: string, destination: string, notes?: string }) {

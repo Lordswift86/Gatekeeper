@@ -38,6 +38,16 @@ export const PassService = {
         })
     },
 
+    async getEstatePasses(estateId: string) {
+        return prisma.guestPass.findMany({
+            where: {
+                host: { estateId: estateId }
+            },
+            orderBy: { createdAt: 'desc' },
+            include: { host: true }
+        })
+    },
+
     async validateCode(code: string, estateId: string) {
         const pass = await prisma.guestPass.findUnique({
             where: { code },
@@ -59,13 +69,15 @@ export const PassService = {
     },
 
     async processEntry(passId: string) {
-        return prisma.guestPass.update({
+        console.log(`[PassService] processEntry called for passId: ${passId}`);
+        const updated = await prisma.guestPass.update({
             where: { id: passId },
             data: {
                 status: 'CHECKED_IN',
                 entryTime: new Date()
             }
         })
+        return updated
     },
 
     async processExit(passId: string) {

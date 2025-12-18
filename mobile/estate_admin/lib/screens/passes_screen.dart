@@ -22,9 +22,9 @@ class _PassesScreenState extends State<PassesScreen> {
   Future<void> _loadPasses() async {
     setState(() => _isLoading = true);
     try {
-      final passes = await ApiClient.getEstatePasses();
+      final passes = await ApiClient.getUserPasses();
       setState(() {
-        _passes = passes;
+        _passes = passes.map((p) => p.toJson()).toList();
         _isLoading = false;
       });
     } catch (e) {

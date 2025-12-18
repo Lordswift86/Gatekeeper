@@ -24,12 +24,10 @@ class _ScannerViewState extends State<ScannerView> {
     
     try {
       final result = await ApiClient.validatePass(code);
+      print("DEBUG: validatePass Result: $result");
       setState(() {
         _isLoading = false;
-        _scanResult = {
-          'success': true,
-          'pass': result,
-        };
+        _scanResult = result;
       });
     } catch (e) {
       setState(() {
@@ -43,10 +41,20 @@ class _ScannerViewState extends State<ScannerView> {
   }
 
   Future<void> _handleAction(String action) async {
-    if (_scanResult == null || _scanResult!['pass'] == null) return;
+    print("DEBUG: _handleAction called with $action");
+    if (_scanResult == null) {
+      print("DEBUG: _scanResult is null");
+      return;
+    }
+    if (_scanResult!['pass'] == null) {
+      print("DEBUG: _scanResult['pass'] is null");
+      return;
+    }
     
     final pass = _scanResult!['pass'] as Map<String, dynamic>;
+    print("DEBUG: Pass object: $pass");
     final passId = pass['id'] as String;
+    print("DEBUG: Pass ID: $passId");
     
     try {
       if (action == 'ENTRY') {
