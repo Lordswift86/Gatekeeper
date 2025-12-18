@@ -32,8 +32,11 @@ export const EstateService = {
     },
 
     async updateEstate(id: string, data: { name?: string, tier?: string, securityPhone?: string, securityPassword?: string }) {
+        console.log('[EstateService] updateEstate called with:', { id, dataKeys: Object.keys(data), securityPhone: data.securityPhone, hasPassword: !!data.securityPassword });
+
         // If security contact is being updated and password is provided, create/update security account
         if (data.securityPhone && data.securityPassword) {
+            console.log('[EstateService] Creating/Updating Security Account...');
             const hashedPassword = await bcrypt.hash(data.securityPassword, 12)
 
             // Format phone number to match login expectation

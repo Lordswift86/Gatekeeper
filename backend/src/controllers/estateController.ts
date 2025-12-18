@@ -33,6 +33,7 @@ export const createEstate = async (req: Request, res: Response) => {
 
 export const updateEstate = async (req: Request, res: Response) => {
     try {
+        console.log('[EstateController] updateEstate body:', req.body);
         const estate = await EstateService.updateEstate(req.params.id, req.body)
         res.json(estate)
     } catch (error: any) {
